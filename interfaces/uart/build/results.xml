@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1774380571" />
-    <testcase name="uart_test" classname="uart_rx_tc" file="/home/sam/FPGA/ip/interfaces/uart/sim/uart_rx_tc.py" lineno="8" time="0.38767170906066895" sim_time_ns="561400.0" ratio_time="1448132.496849656" />
+    <property name="random_seed" value="1774453883" />
+    <testcase name="uart_test" classname="uart_rx_tc" file="/home/sam/FPGA/ip/interfaces/uart/sim/uart_rx_tc.py" lineno="8" time="0.42630743980407715" sim_time_ns="561400.0" ratio_time="1316889.9896703863" />
   </testsuite>
 </testsuites>

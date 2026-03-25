@@ -14,88 +14,65 @@ ENTITY uart_tx IS
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    tx : IN STD_LOGIC;
+    tx : OUT STD_LOGIC;
 
-    m_axis_tdata : OUT STD_LOGIC_VECTOR(g_data_bits - 1 DOWNTO 0);
-    m_axis_tvalid : OUT STD_LOGIC
+    s_axis_tdata : IN STD_LOGIC_VECTOR(g_data_bits - 1 DOWNTO 0);
+    s_axis_tvalid : IN STD_LOGIC;
+    s_axis_tready : OUT STD_LOGIC
   );
 END ENTITY;
 
 ARCHITECTURE structure OF uart_tx IS
   CONSTANT c_bit_period : INTEGER := g_clock_frequency / g_baud_rate;
-  CONSTANT c_bit_period2 : INTEGER := g_clock_frequency / (2 * g_baud_rate);
 
-  TYPE t_uart_state IS (Idle, Start, Data, Stop);
-  SIGNAL state : t_uart_state;
+  TYPE t_uart_state IS (Idle, Send);
+  SIGNAL state : t_uart_state := Idle;
+  TYPE t_gen_state IS (Half, Full);
+  SIGNAL gen_state : t_gen_state;
 
-  SIGNAL data_i : STD_LOGIC_VECTOR(g_data_bits - 1 DOWNTO 0);
-  SIGNAL done_i : STD_LOGIC_VECTOR(g_data_bits - 1 DOWNTO 0);
+  SIGNAL count : INTEGER := 0;
 
-  SIGNAL tx_sync : STD_LOGIC;
+  SIGNAL timing_ena : STD_LOGIC;
+  SIGNAL bit_period : STD_LOGIC;
+
+  SIGNAL ready : STD_LOGIC;
+  SIGNAL data : STD_LOGIC_VECTOR(g_data_bits + g_stop_bits DOWNTO 0); -- start, data, stop
+  SIGNAL bit_index : STD_LOGIC_VECTOR(data'RANGE);
+
 BEGIN
-  input_sync_inst : ENTITY work.input_sync
-    GENERIC MAP(
-      g_sync_stages => 2,
-      g_reset_val => '1'
-    )
-    PORT MAP(
-      input => tx,
-      reset => reset,
-      dest_clk => clk,
-      output => tx_sync
-    );
+  s_axis_tready <= '1' WHEN state = Idle ELSE
+    '0';
+  tx <= data(0);
 
   p_state_machine : PROCESS (clk)
-    VARIABLE v_count : INTEGER := 0;
   BEGIN
     IF rising_edge(clk) THEN
-      m_axis_tvalid <= '0';
-
       CASE state IS
         WHEN Idle =>
-          IF tx_sync = '0' THEN
-            state <= Start;
+          count <= 0;
+          IF s_axis_tvalid = '1' THEN
+            data <= "1" & s_axis_tdata & "0";
+            bit_index(bit_index'left) <= '1';
+            state <= Send;
           END IF;
-          v_count := 0;
-        WHEN Start =>
-          IF v_count = c_bit_period2 THEN
-            v_count := 0;
-            state <= Data;
-            done_i <= (0 => '1', OTHERS => '0');
-          ELSE
-            v_count := v_count + 1;
-          END IF;
-        WHEN Data =>
-          IF v_count = c_bit_period THEN
-            v_count := 0;
-            data_i <= tx_sync & data_i(g_data_bits - 1 DOWNTO 1);
-            done_i <= done_i(g_data_bits - 2 DOWNTO 0) & done_i(g_data_bits - 1);
+        WHEN Send =>
+          count <= count + 1;
+          IF count = c_bit_period THEN
+            count <= 0;
+            data <= STD_LOGIC_VECTOR(shift_right(unsigned(data), 1));
+            bit_index <= STD_LOGIC_VECTOR(shift_right(unsigned(bit_index), 1));
 
-            IF done_i(g_data_bits - 1) = '1' THEN
-              state <= Stop;
+            IF bit_index(0) = '1' THEN
+              data <= (OTHERS => '1');
+              bit_index <= (OTHERS => '0');
+              state <= Idle;
             END IF;
-          ELSE
-            v_count := v_count + 1;
           END IF;
-
-        WHEN Stop =>
-          IF v_count = c_bit_period THEN
-            v_count := 0;
-            IF tx_sync = '1' THEN
-              m_axis_tvalid <= '1';
-              m_axis_tdata <= data_i;
-            END IF;
-            state <= Idle;
-          ELSE
-            v_count := v_count + 1;
-          END IF;
-        WHEN OTHERS =>
       END CASE;
-
       IF reset = '1' THEN
-        state <= Idle;
-        data_i <= (OTHERS => '0');
-        done_i <= (OTHERS => '0');
+        data <= (OTHERS => '1');
+        bit_index <= (OTHERS => '0');
+        count <= 0;
       END IF;
     END IF;
   END PROCESS;

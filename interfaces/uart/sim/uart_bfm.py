@@ -149,3 +149,199 @@ class UartDriver:
         await self._cfg.bit_time(duration_bits)
         self._sig.value = 1
         await self._cfg.bit_time(1)   # brief idle recovery
+
+
+class UartMonitor:
+    """
+    Passively monitors a UART RX signal and decodes frames.
+
+    Decoded frames are pushed onto an internal queue and optionally
+    forwarded to a user-supplied callback.
+
+    Usage::
+
+        mon = UartMonitor(dut.uart_txd, UartConfig(baud_rate=9600))
+        mon.start()
+        ...
+        frame = await mon.recv()        # blocking
+        frame = mon.recv_nowait()       # non-blocking, returns None if empty
+    """
+
+    def __init__(
+        self,
+        signal,
+        config: UartConfig = UartConfig(),
+        callback: Optional[Callable[[UartFrame], Awaitable[None]]] = None,
+        log: Optional[logging.Logger] = None,
+    ):
+        self._sig = signal
+        self._cfg = config
+        self._callback = callback
+        self._log = log or logging.getLogger(self.__class__.__name__)
+        self._queue = []
+        self._waiters = []
+        self._task = None
+        self.error_count = 0
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def start(self) -> None:
+        """Spawn the background sampling coroutine."""
+        if self._task is None:
+            self._task = cocotb.start_soon(self._run())
+
+    def stop(self) -> None:
+        if self._task is not None:
+            self._task.kill()
+            self._task = None
+
+    # ------------------------------------------------------------------
+    # Receive API
+    # ------------------------------------------------------------------
+
+    async def recv(self) -> UartFrame:
+        """Block until a frame arrives, then return it."""
+        if self._queue:
+            return self._queue.pop(0)
+        evt = cocotb.triggers.Event()
+        self._waiters.append(evt)
+        await evt.wait()
+        return self._queue.pop(0)
+
+    def recv_nowait(self) -> Optional[UartFrame]:
+        """Return the oldest queued frame without blocking, or None."""
+        return self._queue.pop(0) if self._queue else None
+
+    def recv_all_nowait(self) -> list:
+        frames, self._queue = self._queue[:], []
+        return frames
+
+    @property
+    def received(self) -> list:
+        """Read-only snapshot of the current queue."""
+        return list(self._queue)
+
+    # ------------------------------------------------------------------
+    # Internal sampling loop
+    # ------------------------------------------------------------------
+
+    async def _run(self) -> None:
+        cfg = self._cfg
+        self._log.debug("Monitor started")
+        while True:
+            # Wait for start bit (falling edge on idle-high line)
+            await FallingEdge(self._sig)
+            ts = get_sim_time(unit="ns")
+
+            # Re-sample in the middle of the start bit to confirm it
+            await cfg.half_bit_time()
+            if self._sig.value != 0:
+                self._log.warning("False start bit detected – ignoring")
+                continue
+
+            # Sample each data bit at the centre of its bit period
+            data = 0
+            for i in range(cfg.data_bits):
+                await cfg.bit_time()
+                bit = int(self._sig.value)
+                data |= (bit << i)
+
+            # Optional parity check
+            parity_ok = True
+            if cfg.parity != Parity.NONE:
+                await cfg.bit_time()
+                rx_parity = int(self._sig.value)
+                expected = _calc_parity(data, cfg.data_bits, cfg.parity)
+                parity_ok = (rx_parity == expected)
+                if not parity_ok:
+                    self._log.error(
+                        f"Parity error on 0x{data:02X}: "
+                        f"got {rx_parity}, expected {expected}"
+                    )
+
+            # Stop bit check
+            await cfg.bit_time()
+            stop_bit = int(self._sig.value)
+            framing_ok = (stop_bit == 1)
+            if not framing_ok:
+                self._log.error(f"Framing error on 0x{data:02X}: stop bit was {stop_bit}")
+
+            if not parity_ok or not framing_ok:
+                self.error_count += 1
+
+            frame = UartFrame(
+                data=data,
+                parity_ok=parity_ok,
+                framing_ok=framing_ok,
+                timestamp_ns=ts,
+            )
+            self._log.debug(f"RX {frame}")
+            self._enqueue(frame)
+
+            if self._callback is not None:
+                await self._callback(frame)
+
+    def _enqueue(self, frame: UartFrame) -> None:
+        self._queue.append(frame)
+        for evt in self._waiters:
+            evt.set()
+        self._waiters.clear()
+
+
+# ---------------------------------------------------------------------------
+# UartBfm  –  convenience wrapper
+# ---------------------------------------------------------------------------
+
+class UartBfm:
+    """
+    Combined UART BFM that owns both a driver and a monitor.
+
+    Typical loopback testbench::
+
+        bfm = UartBfm(
+            tx_signal = dut.uart_rxd,   # BFM drives DUT's RX input
+            rx_signal = dut.uart_txd,   # BFM monitors DUT's TX output
+            config    = UartConfig(baud_rate=115200, parity=Parity.EVEN),
+        )
+        bfm.start()
+
+        await bfm.send(0xA5)
+        frame = await bfm.recv()
+        assert frame.data == 0xA5
+    """
+
+    def __init__(
+        self,
+        tx_signal,
+        rx_signal,
+        config: UartConfig = UartConfig(),
+        log: Optional[logging.Logger] = None,
+    ):
+        self._log = log or logging.getLogger("UartBfm")
+        self.config = config
+        self.driver = UartDriver(tx_signal, config, log=self._log.getChild("drv"))
+        self.monitor = UartMonitor(rx_signal, config, log=self._log.getChild("mon"))
+
+    def start(self) -> None:
+        self.monitor.start()
+
+    def stop(self) -> None:
+        self.monitor.stop()
+
+    # Delegate driver methods
+    async def send(self, data: int) -> None: await self.driver.send(data)
+    async def send_bytes(self, data: bytes) -> None: await self.driver.send_bytes(data)
+    async def send_break(self, bits=13.0) -> None: await self.driver.send_break(bits)
+    async def send_with_bad_parity(self, data) -> None: await self.driver.send_with_bad_parity(data)
+    async def send_with_bad_stop(self, data) -> None: await self.driver.send_with_bad_stop(data)
+
+    # Delegate monitor methods
+    async def recv(self) -> UartFrame: return await self.monitor.recv()
+    def recv_nowait(self) -> Optional[UartFrame]: return self.monitor.recv_nowait()
+    def recv_all_nowait(self) -> list: return self.monitor.recv_all_nowait()
+
+    @property
+    def error_count(self) -> int:
+        return self.monitor.error_count
