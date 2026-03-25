@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1774460174" />
+    <testcase name="axis_fifo_test" classname="axis_fifo_tc" file="/home/sam/FPGA/ip/components/axis_fifo/sim/axis_fifo_tc.py" lineno="8" time="0.005463838577270508" sim_time_ns="1100.0" ratio_time="201323.66365580136" />
+  </testsuite>
+</testsuites>
