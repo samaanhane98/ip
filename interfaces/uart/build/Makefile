@@ -6,9 +6,11 @@ TOPLEVEL_LANG ?= vhdl
 
 IP_ROOT = ../../../
 
-VHDL_SOURCES += $(IP_ROOT)/interfaces/uart/vhdl_sources/uart_rx.vhd
-VHDL_SOURCES += $(IP_ROOT)/interfaces/uart/vhdl_sources/uart_tx.vhd
-VHDL_SOURCES += $(IP_ROOT)/components/input_sync/vhdl_sources/input_sync.vhd
+VHDL_SOURCES += $(wildcard $(IP_ROOT)/interfaces/uart/vhdl_sources/*.vhd)
+VHDL_SOURCES += $(wildcard $(IP_ROOT)components/input_sync/vhdl_sources/*.vhd)
+# VHDL_SOURCES += $(IP_ROOT)/interfaces/uart/vhdl_sources/uart_rx.vhd
+# VHDL_SOURCES += $(IP_ROOT)/interfaces/uart/vhdl_sources/uart_tx.vhd
+# VHDL_SOURCES += $(IP_ROOT)/components/input_sync/vhdl_sources/input_sync.vhd
 
 export PYTHONPATH=../sim
 

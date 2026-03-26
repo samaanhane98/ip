@@ -1,3 +1,5 @@
 **/__pycache__
 **/sim_build
+**/*.xml
+**/*.vcd
 sim_env/
