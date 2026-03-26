@@ -26,4 +26,5 @@ async def uart_tx_test(dut):
 
     frame = await uart_sink.recv()
 
+    print(frame.data)
     assert frame.data == 0xAA

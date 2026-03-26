@@ -30,10 +30,9 @@ ARCHITECTURE structure OF uart_tx IS
   TYPE t_gen_state IS (Half, Full);
   SIGNAL gen_state : t_gen_state;
 
-  SIGNAL count : INTEGER := 0;
-
-  SIGNAL timing_ena : STD_LOGIC;
-  SIGNAL bit_period : STD_LOGIC;
+  SIGNAL sample_ena : STD_LOGIC;
+  SIGNAL baud_tick : STD_LOGIC;
+  SIGNAL sample : STD_LOGIC;
 
   SIGNAL ready : STD_LOGIC;
   SIGNAL data : STD_LOGIC_VECTOR(g_data_bits + g_stop_bits DOWNTO 0); -- start, data, stop
@@ -44,21 +43,36 @@ BEGIN
     '0';
   tx <= data(0);
 
+  uart_sample_gen_inst : ENTITY work.uart_sample_gen
+    GENERIC MAP(
+      g_clock_frequency => g_clock_frequency,
+      g_baud_rate => g_baud_rate,
+      g_data_bits => g_data_bits,
+      g_stop_bits => g_stop_bits,
+      g_include_first_bit => false
+    )
+    PORT MAP(
+      clk => clk,
+      reset => reset,
+      ena => sample_ena,
+      baud_tick => baud_tick,
+      sample => sample
+    );
+  sample_ena <= '0' WHEN state = Idle ELSE
+    '1';
+
   p_state_machine : PROCESS (clk)
   BEGIN
     IF rising_edge(clk) THEN
       CASE state IS
         WHEN Idle =>
-          count <= 0;
           IF s_axis_tvalid = '1' THEN
             data <= "1" & s_axis_tdata & "0";
             bit_index(bit_index'left) <= '1';
             state <= Send;
           END IF;
         WHEN Send =>
-          count <= count + 1;
-          IF count = c_bit_period THEN
-            count <= 0;
+          IF sample = '1' THEN
             data <= STD_LOGIC_VECTOR(shift_right(unsigned(data), 1));
             bit_index <= STD_LOGIC_VECTOR(shift_right(unsigned(bit_index), 1));
 
@@ -72,7 +86,6 @@ BEGIN
       IF reset = '1' THEN
         data <= (OTHERS => '1');
         bit_index <= (OTHERS => '0');
-        count <= 0;
       END IF;
     END IF;
   END PROCESS;

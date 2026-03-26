@@ -14,11 +14,11 @@ VHDL_SOURCES += $(wildcard $(IP_ROOT)components/input_sync/vhdl_sources/*.vhd)
 
 export PYTHONPATH=../sim
 
-#COCOTB_TOPLEVEL = uart_tx
-#COCOTB_TEST_MODULES =uart_tx_tc
+COCOTB_TOPLEVEL = uart_tx
+COCOTB_TEST_MODULES =uart_tx_tc
 
-COCOTB_TOPLEVEL = uart_rx
-COCOTB_TEST_MODULES =uart_rx_tc
+#COCOTB_TOPLEVEL = uart_rx
+#COCOTB_TEST_MODULES =uart_rx_tc
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
