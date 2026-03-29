@@ -14,8 +14,11 @@ VHDL_SOURCES += $(wildcard $(IP_ROOT)/components/buffers/vhdl_sim/*.vhd)
 
 export PYTHONPATH=../sim
 
-COCOTB_TOPLEVEL = axi4s_input_buffer_wrapper
-COCOTB_TEST_MODULES =axi4s_input_buffer_tc
+COCOTB_TOPLEVEL = axi4s_output_buffer_wrapper
+COCOTB_TEST_MODULES =axi4s_output_buffer_tc
+
+# COCOTB_TOPLEVEL = axi4s_input_buffer_wrapper
+# COCOTB_TEST_MODULES =axi4s_input_buffer_tc
 
 
 GHDL_ARGS = --std=08
