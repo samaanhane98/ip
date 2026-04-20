@@ -12,19 +12,19 @@ ENTITY axis_fifo IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
-    packet_in : IN t_axi4s_32;
-    packet_in_ready : OUT STD_LOGIC;
+    stream_in : IN t_axi4s_32;
+    stream_in_ready : OUT STD_LOGIC;
 
-    packet_out : OUT t_axi4s_32;
-    packet_out_ready : IN STD_LOGIC
+    stream_out : OUT t_axi4s_32;
+    stream_out_ready : IN STD_LOGIC
   );
 END ENTITY;
 
 -- TODO: make sure this synthesizes to bram
 ARCHITECTURE behavior OF axis_fifo IS
-  TYPE t_ram_tdata IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(packet_in.tdata'RANGE);
-  TYPE t_ram_tuser IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(packet_in.tuser'RANGE);
-  TYPE t_ram_tkeep IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(packet_in.tuser'RANGE);
+  TYPE t_ram_tdata IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(stream_in.tdata'RANGE);
+  TYPE t_ram_tuser IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(stream_in.tuser'RANGE);
+  TYPE t_ram_tkeep IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC_VECTOR(stream_in.tuser'RANGE);
   TYPE t_ram_tlast IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC;
   TYPE t_ram_tfirst IS ARRAY (0 TO g_word_depth - 1) OF STD_LOGIC;
   SIGNAL ram_tdata : t_ram_tdata;
@@ -47,7 +47,7 @@ ARCHITECTURE behavior OF axis_fifo IS
   SIGNAL empty : STD_LOGIC;
 BEGIN
   s_tready <= NOT full;
-  packet_in_ready <= s_tready;
+  stream_in_ready <= s_tready;
 
   p_full_gen : PROCESS (write_pointer, read_pointer, reset)
   BEGIN
@@ -76,11 +76,11 @@ BEGIN
   p_write : PROCESS (clk)
   BEGIN
     IF rising_edge(clk) THEN
-      IF packet_in.tvalid = '1' AND s_tready = '1' THEN
-        ram_tdata(to_integer(write_pointer)) <= packet_in.tdata;
-        ram_tuser(to_integer(write_pointer)) <= packet_in.tuser;
-        ram_tkeep(to_integer(write_pointer)) <= packet_in.tkeep;
-        ram_tlast(to_integer(write_pointer)) <= packet_in.tlast;
+      IF stream_in.tvalid = '1' AND s_tready = '1' THEN
+        ram_tdata(to_integer(write_pointer)) <= stream_in.tdata;
+        ram_tuser(to_integer(write_pointer)) <= stream_in.tuser;
+        ram_tkeep(to_integer(write_pointer)) <= stream_in.tkeep;
+        ram_tlast(to_integer(write_pointer)) <= stream_in.tlast;
 
         write_pointer <= write_pointer + 1;
       END IF;
@@ -94,17 +94,17 @@ BEGIN
   p_read : PROCESS (clk)
   BEGIN
     IF rising_edge(clk) THEN
-      packet_out.tvalid <= NOT empty;
-      packet_out.tdata <= ram_tdata(to_integer(read_pointer));
-      packet_out.tuser <= ram_tuser(to_integer(read_pointer));
-      packet_out.tkeep <= ram_tkeep(to_integer(read_pointer));
-      packet_out.tlast <= ram_tlast(to_integer(read_pointer));
+      stream_out.tvalid <= NOT empty;
+      stream_out.tdata <= ram_tdata(to_integer(read_pointer));
+      stream_out.tuser <= ram_tuser(to_integer(read_pointer));
+      stream_out.tkeep <= ram_tkeep(to_integer(read_pointer));
+      stream_out.tlast <= ram_tlast(to_integer(read_pointer));
 
-      IF packet_out_ready = '1' AND empty = '0' THEN
+      IF stream_out_ready = '1' AND empty = '0' THEN
         read_pointer <= read_pointer + 1;
       END IF;
       IF reset = '1' THEN
-        packet_out.tvalid <= '0';
+        stream_out.tvalid <= '0';
         read_pointer <= (OTHERS => '0');
       END IF;
     END IF;

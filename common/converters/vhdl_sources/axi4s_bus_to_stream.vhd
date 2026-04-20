@@ -8,8 +8,8 @@ ENTITY axi4s_pkg_to_stream IS
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    packet_in : IN t_axi4s_32;
-    packet_in_ready : OUT STD_LOGIC;
+    stream_in : IN t_axi4s_32;
+    stream_in_ready : OUT STD_LOGIC;
 
     m_axis_tvalid : OUT STD_LOGIC;
     m_axis_tready : IN STD_LOGIC;
@@ -21,10 +21,10 @@ END ENTITY;
 
 ARCHITECTURE structure OF axi4s_pkg_to_stream IS
 BEGIN
-  packet_in_ready <= m_axis_tready;
-  m_axis_tvalid <= packet_in.tvalid;
-  m_axis_tlast <= packet_in.tlast;
-  m_axis_tdata <= packet_in.tdata;
-  m_axis_tuser <= packet_in.tuser;
+  stream_in_ready <= m_axis_tready;
+  m_axis_tvalid <= stream_in.tvalid;
+  m_axis_tlast <= stream_in.tlast;
+  m_axis_tdata <= stream_in.tdata;
+  m_axis_tuser <= stream_in.tuser;
 
 END ARCHITECTURE;

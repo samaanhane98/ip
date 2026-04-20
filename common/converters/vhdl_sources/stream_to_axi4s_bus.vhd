@@ -13,8 +13,8 @@ ENTITY stream_to_axi4s_pkg IS
     s_axis_tlast : IN STD_LOGIC;
     s_axis_tdata : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     s_axis_tuser : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    packet_out : OUT t_axi4s_32;
-    packet_out_ready : IN STD_LOGIC
+    stream_out : OUT t_axi4s_32;
+    stream_out_ready : IN STD_LOGIC
   );
 END ENTITY;
 
@@ -22,11 +22,11 @@ ARCHITECTURE structure OF stream_to_axi4s_pkg IS
   SIGNAL first : STD_LOGIC;
 BEGIN
 
-  s_axis_tready <= packet_out_ready;
-  packet_out.tvalid <= s_axis_tvalid;
-  packet_out.tlast <= s_axis_tlast;
-  packet_out.tdata <= s_axis_tdata;
-  packet_out.tuser <= s_axis_tuser;
+  s_axis_tready <= stream_out_ready;
+  stream_out.tvalid <= s_axis_tvalid;
+  stream_out.tlast <= s_axis_tlast;
+  stream_out.tdata <= s_axis_tdata;
+  stream_out.tuser <= s_axis_tuser;
 
   p_delay_tlast : PROCESS (clk)
   BEGIN

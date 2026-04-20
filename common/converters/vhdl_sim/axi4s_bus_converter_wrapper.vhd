@@ -36,16 +36,16 @@ BEGIN
       s_axis_tlast => s_axis_tlast,
       s_axis_tdata => s_axis_tdata,
       s_axis_tuser => s_axis_tuser,
-      packet_out => stream_m2s,
-      packet_out_ready => stream_s2m
+      stream_out => stream_m2s,
+      stream_out_ready => stream_s2m
     );
 
   axi4s_pkg_to_stream_inst : ENTITY work.axi4s_pkg_to_stream
     PORT MAP(
       clk => clk,
       reset => reset,
-      packet_in => stream_m2s,
-      packet_in_ready => stream_s2m,
+      stream_in => stream_m2s,
+      stream_in_ready => stream_s2m,
       m_axis_tvalid => m_axis_tvalid,
       m_axis_tready => m_axis_tready,
       m_axis_tlast => m_axis_tlast,

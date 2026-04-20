@@ -10,11 +10,11 @@ ENTITY axi4s_output_buffer IS
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    packet_in : IN t_axi4s_32;
-    packet_in_ready : OUT STD_LOGIC;
+    stream_in : IN t_axi4s_32;
+    stream_in_ready : OUT STD_LOGIC;
 
-    packet_out : OUT t_axi4s_32;
-    packet_out_ready : IN STD_LOGIC
+    stream_out : OUT t_axi4s_32;
+    stream_out_ready : IN STD_LOGIC
   );
 END ENTITY;
 
@@ -27,21 +27,21 @@ ARCHITECTURE behavior OF axi4s_output_buffer IS
   SIGNAL reg_in_tuser : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
 BEGIN
-  packet_in_ready <= (NOT reg_in_tvalid OR packet_out_ready);
+  stream_in_ready <= (NOT reg_in_tvalid OR stream_out_ready);
 
-  packet_out.tvalid <= reg_in_tvalid;
-  packet_out.tlast <= reg_in_tlast;
-  packet_out.tdata <= reg_in_tdata;
-  packet_out.tuser <= reg_in_tuser;
+  stream_out.tvalid <= reg_in_tvalid;
+  stream_out.tlast <= reg_in_tlast;
+  stream_out.tdata <= reg_in_tdata;
+  stream_out.tuser <= reg_in_tuser;
 
   p_input_reg : PROCESS (clk)
   BEGIN
     IF rising_edge(clk) THEN
-      IF packet_in.tvalid = '1' AND (reg_in_tvalid = '0' OR packet_out_ready = '1') THEN
-        reg_in_tvalid <= packet_in.tvalid;
-        reg_in_tlast <= packet_in.tlast;
-        reg_in_tdata <= packet_in.tdata;
-        reg_in_tuser <= packet_in.tuser;
+      IF stream_in.tvalid = '1' AND (reg_in_tvalid = '0' OR stream_out_ready = '1') THEN
+        reg_in_tvalid <= stream_in.tvalid;
+        reg_in_tlast <= stream_in.tlast;
+        reg_in_tdata <= stream_in.tdata;
+        reg_in_tuser <= stream_in.tuser;
       END IF;
       IF reset = '1' THEN
         reg_in_tvalid <= '0';
