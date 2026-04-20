@@ -2,13 +2,13 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_bus_pkg.ALL;
-ENTITY axi4s_bus_pkg_to_stream IS
+USE work.axi4s_pkg.ALL;
+ENTITY axi4s_pkg_to_stream IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    packet_in : IN t_axi4s_packet_32;
+    packet_in : IN t_axi4s_32;
     packet_in_ready : OUT STD_LOGIC;
 
     m_axis_tvalid : OUT STD_LOGIC;
@@ -19,7 +19,7 @@ ENTITY axi4s_bus_pkg_to_stream IS
   );
 END ENTITY;
 
-ARCHITECTURE structure OF axi4s_bus_pkg_to_stream IS
+ARCHITECTURE structure OF axi4s_pkg_to_stream IS
 BEGIN
   packet_in_ready <= m_axis_tready;
   m_axis_tvalid <= packet_in.tvalid;

@@ -3,7 +3,7 @@ USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE ieee.math_real.ALL;
 
-USE work.axi4s_bus_pkg.ALL;
+USE work.axi4s_pkg.ALL;
 
 ENTITY axis_fifo IS
   GENERIC (
@@ -12,10 +12,10 @@ ENTITY axis_fifo IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
-    packet_in : IN t_axi4s_packet_32;
+    packet_in : IN t_axi4s_32;
     packet_in_ready : OUT STD_LOGIC;
 
-    packet_out : OUT t_axi4s_packet_32;
+    packet_out : OUT t_axi4s_32;
     packet_out_ready : IN STD_LOGIC
   );
 END ENTITY;

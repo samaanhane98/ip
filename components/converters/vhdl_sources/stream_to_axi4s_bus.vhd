@@ -2,8 +2,8 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_bus_pkg.ALL;
-ENTITY stream_to_axi4s_bus_pkg IS
+USE work.axi4s_pkg.ALL;
+ENTITY stream_to_axi4s_pkg IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
@@ -13,12 +13,12 @@ ENTITY stream_to_axi4s_bus_pkg IS
     s_axis_tlast : IN STD_LOGIC;
     s_axis_tdata : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     s_axis_tuser : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    packet_out : OUT t_axi4s_packet_32;
+    packet_out : OUT t_axi4s_32;
     packet_out_ready : IN STD_LOGIC
   );
 END ENTITY;
 
-ARCHITECTURE structure OF stream_to_axi4s_bus_pkg IS
+ARCHITECTURE structure OF stream_to_axi4s_pkg IS
   SIGNAL first : STD_LOGIC;
 BEGIN
 

@@ -2,7 +2,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_bus_pkg.ALL;
+USE work.axi4s_pkg.ALL;
 
 -- https://pavel-demin.github.io/red-pitaya-notes/axi-interface-buffers/
 ENTITY axi4s_input_buffer IS
@@ -10,10 +10,10 @@ ENTITY axi4s_input_buffer IS
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    packet_in : IN t_axi4s_packet_32;
+    packet_in : IN t_axi4s_32;
     packet_in_ready : OUT STD_LOGIC;
 
-    packet_out : OUT t_axi4s_packet_32;
+    packet_out : OUT t_axi4s_32;
     packet_out_ready : IN STD_LOGIC
   );
 END ENTITY;
