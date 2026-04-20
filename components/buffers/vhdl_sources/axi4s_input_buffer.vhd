@@ -36,7 +36,6 @@ BEGIN
     IF rising_edge(clk) THEN
       IF packet_in.tvalid = '1' AND reg_in_tready = '1' THEN
         reg_in_tlast <= packet_in.tlast;
-        reg_in_tfirst <= packet_in.tfirst;
         reg_in_tdata <= packet_in.tdata;
         reg_in_tuser <= packet_in.tuser;
         reg_in_tkeep <= packet_in.tkeep;
@@ -62,13 +61,11 @@ BEGIN
   BEGIN
     IF reg_in_tready = '1' THEN
       packet_out.tlast <= packet_in.tlast;
-      packet_out.tfirst <= packet_in.tfirst;
       packet_out.tdata <= packet_in.tdata;
       packet_out.tuser <= packet_in.tuser;
       packet_out.tkeep <= packet_in.tkeep;
     ELSE
       packet_out.tlast <= reg_in_tlast;
-      packet_out.tfirst <= reg_in_tfirst;
       packet_out.tuser <= reg_in_tuser;
       packet_out.tkeep <= reg_in_tkeep;
     END IF;

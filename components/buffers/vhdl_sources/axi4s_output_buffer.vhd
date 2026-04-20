@@ -31,7 +31,6 @@ BEGIN
 
   packet_out.tvalid <= reg_in_tvalid;
   packet_out.tlast <= reg_in_tlast;
-  packet_out.tfirst <= reg_in_tfirst;
   packet_out.tdata <= reg_in_tdata;
   packet_out.tuser <= reg_in_tuser;
 
@@ -41,7 +40,6 @@ BEGIN
       IF packet_in.tvalid = '1' AND (reg_in_tvalid = '0' OR packet_out_ready = '1') THEN
         reg_in_tvalid <= packet_in.tvalid;
         reg_in_tlast <= packet_in.tlast;
-        reg_in_tfirst <= packet_in.tfirst;
         reg_in_tdata <= packet_in.tdata;
         reg_in_tuser <= packet_in.tuser;
       END IF;

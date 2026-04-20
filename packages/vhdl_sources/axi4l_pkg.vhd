@@ -2,7 +2,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-PACKAGE axi4l_bus_pkg IS
+PACKAGE axi4l_pkg IS
   TYPE t_ar IS RECORD
     araddr : STD_LOGIC_VECTOR;
     arvalid : STD_LOGIC;
@@ -33,7 +33,7 @@ PACKAGE axi4l_bus_pkg IS
     bready : STD_LOGIC;
   END RECORD;
 
-  TYPE t_axi4l_bus IS RECORD
+  TYPE t_axi4l IS RECORD
     ar : t_ar;
     r : t_r;
     aw : t_ar;

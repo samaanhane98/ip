@@ -30,13 +30,11 @@ BEGIN
       reset => reset,
       packet_in.tvalid => s_axis_tvalid,
       packet_in.tlast => s_axis_tlast,
-      packet_in.tfirst => '0',
       packet_in.tdata => s_axis_tdata,
       packet_in.tuser => s_axis_tuser,
       packet_in_ready => s_axis_tready,
       packet_out.tvalid => m_axis_tvalid,
       packet_out.tlast => m_axis_tlast,
-      packet_out.tfirst => tfirst,
       packet_out.tdata => m_axis_tdata,
       packet_out.tuser => m_axis_tuser,
       packet_out_ready => m_axis_tready

@@ -6,7 +6,6 @@ PACKAGE axi4s_pkg IS
   TYPE t_axi4s IS RECORD
     tvalid : STD_LOGIC;
     tlast : STD_LOGIC;
-    tfirst : STD_LOGIC;
     tdata : STD_LOGIC_VECTOR;
     tuser : STD_LOGIC_VECTOR;
     tkeep : STD_LOGIC_VECTOR;

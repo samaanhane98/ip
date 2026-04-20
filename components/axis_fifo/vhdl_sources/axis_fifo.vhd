@@ -31,14 +31,12 @@ ARCHITECTURE behavior OF axis_fifo IS
   SIGNAL ram_tuser : t_ram_tuser;
   SIGNAL ram_tkeep : t_ram_tkeep;
   SIGNAL ram_tlast : t_ram_tlast;
-  SIGNAL ram_tfirst : t_ram_tlast;
 
   ATTRIBUTE ram_style : STRING;
   ATTRIBUTE ram_style OF ram_tdata : SIGNAL IS "block";
   ATTRIBUTE ram_style OF ram_tuser : SIGNAL IS "block";
   ATTRIBUTE ram_style OF ram_tkeep : SIGNAL IS "block";
   ATTRIBUTE ram_style OF ram_tlast : SIGNAL IS "block";
-  ATTRIBUTE ram_style OF ram_tfirst : SIGNAL IS "block";
 
   SIGNAL read_pointer : UNSIGNED(INTEGER(log2(real(g_word_depth))) - 1 DOWNTO 0);
   SIGNAL write_pointer : UNSIGNED(INTEGER(log2(real(g_word_depth))) - 1 DOWNTO 0);
@@ -83,7 +81,6 @@ BEGIN
         ram_tuser(to_integer(write_pointer)) <= packet_in.tuser;
         ram_tkeep(to_integer(write_pointer)) <= packet_in.tkeep;
         ram_tlast(to_integer(write_pointer)) <= packet_in.tlast;
-        ram_tfirst(to_integer(write_pointer)) <= packet_in.tfirst;
 
         write_pointer <= write_pointer + 1;
       END IF;
@@ -102,7 +99,6 @@ BEGIN
       packet_out.tuser <= ram_tuser(to_integer(read_pointer));
       packet_out.tkeep <= ram_tkeep(to_integer(read_pointer));
       packet_out.tlast <= ram_tlast(to_integer(read_pointer));
-      packet_out.tfirst <= ram_tfirst(to_integer(read_pointer));
 
       IF packet_out_ready = '1' AND empty = '0' THEN
         read_pointer <= read_pointer + 1;

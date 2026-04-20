@@ -27,7 +27,6 @@ BEGIN
   packet_out.tlast <= s_axis_tlast;
   packet_out.tdata <= s_axis_tdata;
   packet_out.tuser <= s_axis_tuser;
-  packet_out.tfirst <= first;
 
   p_delay_tlast : PROCESS (clk)
   BEGIN
