@@ -28,17 +28,17 @@ BEGIN
     PORT MAP(
       clk => clk,
       reset => reset,
-      stream_in_m2s.tvalid => s_axis_tvalid,
-      stream_in_m2s.tlast => s_axis_tlast,
-      stream_in_m2s.tfirst => '0',
-      stream_in_m2s.tdata => s_axis_tdata,
-      stream_in_m2s.tuser => s_axis_tuser,
-      stream_in_s2m.tready => s_axis_tready,
-      stream_out_m2s.tvalid => m_axis_tvalid,
-      stream_out_m2s.tlast => m_axis_tlast,
-      stream_out_m2s.tfirst => tfirst,
-      stream_out_m2s.tdata => m_axis_tdata,
-      stream_out_m2s.tuser => m_axis_tuser,
-      stream_out_s2m.tready => m_axis_tready
+      packet_in.tvalid => s_axis_tvalid,
+      packet_in.tlast => s_axis_tlast,
+      packet_in.tfirst => '0',
+      packet_in.tdata => s_axis_tdata,
+      packet_in.tuser => s_axis_tuser,
+      packet_in_ready => s_axis_tready,
+      packet_out.tvalid => m_axis_tvalid,
+      packet_out.tlast => m_axis_tlast,
+      packet_out.tfirst => tfirst,
+      packet_out.tdata => m_axis_tdata,
+      packet_out.tuser => m_axis_tuser,
+      packet_out_ready => m_axis_tready
     );
 END ARCHITECTURE;

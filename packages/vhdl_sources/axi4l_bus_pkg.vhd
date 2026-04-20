@@ -2,7 +2,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-PACKAGE axi4l_bus IS
+PACKAGE axi4l_bus_pkg IS
   TYPE t_ar IS RECORD
     araddr : STD_LOGIC_VECTOR;
     arvalid : STD_LOGIC;

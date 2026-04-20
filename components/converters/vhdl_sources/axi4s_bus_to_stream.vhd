@@ -2,14 +2,14 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_bus.ALL;
-ENTITY axi4s_bus_to_stream IS
+USE work.axi4s_bus_pkg.ALL;
+ENTITY axi4s_bus_pkg_to_stream IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    stream_in_m2s : IN t_axi4s_m2s_32;
-    stream_in_s2m : OUT t_axi4s_s2m;
+    packet_in : IN t_axi4s_packet_32;
+    packet_in_ready : OUT STD_LOGIC;
 
     m_axis_tvalid : OUT STD_LOGIC;
     m_axis_tready : IN STD_LOGIC;
@@ -19,12 +19,12 @@ ENTITY axi4s_bus_to_stream IS
   );
 END ENTITY;
 
-ARCHITECTURE structure OF axi4s_bus_to_stream IS
+ARCHITECTURE structure OF axi4s_bus_pkg_to_stream IS
 BEGIN
-  stream_in_s2m.tready <= m_axis_tready;
-  m_axis_tvalid <= stream_in_m2s.tvalid;
-  m_axis_tlast <= stream_in_m2s.tlast;
-  m_axis_tdata <= stream_in_m2s.tdata;
-  m_axis_tuser <= stream_in_m2s.tuser;
+  packet_in_ready <= m_axis_tready;
+  m_axis_tvalid <= packet_in.tvalid;
+  m_axis_tlast <= packet_in.tlast;
+  m_axis_tdata <= packet_in.tdata;
+  m_axis_tuser <= packet_in.tuser;
 
 END ARCHITECTURE;

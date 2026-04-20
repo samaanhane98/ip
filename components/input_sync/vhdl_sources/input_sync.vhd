@@ -19,6 +19,8 @@ END ENTITY;
 ARCHITECTURE behavior OF input_sync IS
   SIGNAL output_sr : STD_LOGIC_VECTOR(g_sync_stages - 1 DOWNTO 0) := (OTHERS => g_reset_val);
 
+  ATTRIBUTE IOB : STRING;
+  ATTRIBUTE IOB OF output_sr : SIGNAL IS "TRUE";
   ATTRIBUTE ASYNC_REG : STRING;
   ATTRIBUTE ASYNC_REG OF output_sr : SIGNAL IS "TRUE";
 BEGIN
