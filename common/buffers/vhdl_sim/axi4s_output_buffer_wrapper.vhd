@@ -2,7 +2,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-ENTITY axi4s_output_buffer_wrapper IS
+ENTITY axis_output_buffer_wrapper IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
@@ -21,10 +21,10 @@ ENTITY axi4s_output_buffer_wrapper IS
   );
 END ENTITY;
 
-ARCHITECTURE structure OF axi4s_output_buffer_wrapper IS
+ARCHITECTURE structure OF axis_output_buffer_wrapper IS
   SIGNAL tfirst : STD_LOGIC;
 BEGIN
-  axi4s_input_buffer_inst : ENTITY work.axi4s_output_buffer
+  axis_input_buffer_inst : ENTITY work.axis_output_buffer
     PORT MAP(
       clk => clk,
       reset => reset,

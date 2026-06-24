@@ -2,8 +2,8 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_pkg.ALL;
-ENTITY axi4s_pkg_converter_wrapper IS
+USE work.axis_pkg.ALL;
+ENTITY axis_pkg_converter_wrapper IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
@@ -22,12 +22,12 @@ ENTITY axi4s_pkg_converter_wrapper IS
   );
 END ENTITY;
 
-ARCHITECTURE structure OF axi4s_pkg_converter_wrapper IS
-  SIGNAL stream_m2s : t_axi4s_32;
+ARCHITECTURE structure OF axis_pkg_converter_wrapper IS
+  SIGNAL stream_m2s : t_axis_32;
   SIGNAL stream_s2m : STD_LOGIC;
 BEGIN
 
-  stream_to_axi4s_pkg_inst : ENTITY work.stream_to_axi4s_pkg
+  stream_to_axis_pkg_inst : ENTITY work.stream_to_axis_pkg
     PORT MAP(
       clk => clk,
       reset => reset,
@@ -40,7 +40,7 @@ BEGIN
       stream_out_ready => stream_s2m
     );
 
-  axi4s_pkg_to_stream_inst : ENTITY work.axi4s_pkg_to_stream
+  axis_pkg_to_stream_inst : ENTITY work.axis_pkg_to_stream
     PORT MAP(
       clk => clk,
       reset => reset,

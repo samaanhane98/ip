@@ -2,23 +2,23 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-USE work.axi4s_pkg.ALL;
+USE work.axis_pkg.ALL;
 
 -- https://pavel-demin.github.io/red-pitaya-notes/axi-interface-buffers/
-ENTITY axi4s_output_buffer IS
+ENTITY axis_output_buffer IS
   PORT (
     clk : IN STD_LOGIC;
     reset : IN STD_LOGIC;
 
-    stream_in : IN t_axi4s_32;
+    stream_in : IN t_axis;
     stream_in_ready : OUT STD_LOGIC;
 
-    stream_out : OUT t_axi4s_32;
+    stream_out : OUT t_axis;
     stream_out_ready : IN STD_LOGIC
   );
 END ENTITY;
 
-ARCHITECTURE behavior OF axi4s_output_buffer IS
+ARCHITECTURE behavior OF axis_output_buffer IS
   SIGNAL valid : STD_LOGIC;
   SIGNAL reg_in_tvalid : STD_LOGIC;
   SIGNAL reg_in_tlast : STD_LOGIC;

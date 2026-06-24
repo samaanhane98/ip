@@ -1,0 +1,57 @@
+# Current time Wed Apr 29 22:28:51 2026
+# Program = hdlclient
+# Id = "2025.2"
+# Version = "2025.05"
+# Date = "May 31 2025"
+# Platform = "linux_x86_64"
+# Signature = 56d08c150da5ece83175e6142ed09c67
+# lib_addresses = libc.so.6=0x00007ffff4800000,libQt5Core.so.5=0x00007ffff6600000,libqxcb-glx-integration.so=0x00007ffff4a76000,libQt5Gui.so.5=0x00007ffff5e00000,libQt5Widgets.so.5=0x00007ffff5400000
+# End of Stack Trace
+
+#  0 0x00007ffff489eb2c '<unknown (@0x7ffff489eb2c)>'
+#  1 0x00007ffff484527e '<unknown (@0x7ffff484527e)>'
+#  2 0x00007ffff48288ff '<unknown (@0x7ffff48288ff)>'
+#  3 0x00007ffff66bbcf1 '<unknown (@0x7ffff66bbcf1)>'
+#  4 0x00007ffff4a7ed96 '<unknown (@0x7ffff4a7ed96)>'
+#  5 0x00007ffff4a7f207 '<unknown (@0x7ffff4a7f207)>'
+#  6 0x00007ffff5faf29d '<unknown (@0x7ffff5faf29d)>'
+#  7 0x00007ffff5f63427 '<unknown (@0x7ffff5f63427)>'
+#  8 0x00007ffff55a9e29 '<unknown (@0x7ffff55a9e29)>'
+# Current time Wed Apr 29 22:30:42 2026
+# Program = hdlclient
+# Id = "2025.2"
+# Version = "2025.05"
+# Date = "May 31 2025"
+# Platform = "linux_x86_64"
+# Signature = 56d08c150da5ece83175e6142ed09c67
+# lib_addresses = libc.so.6=0x00007ffff4800000,libQt5Core.so.5=0x00007ffff6600000,libqxcb-glx-integration.so=0x00007ffff4a76000,libQt5Gui.so.5=0x00007ffff5e00000,libQt5Widgets.so.5=0x00007ffff5400000
+# End of Stack Trace
+
+#  0 0x00007ffff489eb2c '<unknown (@0x7ffff489eb2c)>'
+#  1 0x00007ffff484527e '<unknown (@0x7ffff484527e)>'
+#  2 0x00007ffff48288ff '<unknown (@0x7ffff48288ff)>'
+#  3 0x00007ffff66bbcf1 '<unknown (@0x7ffff66bbcf1)>'
+#  4 0x00007ffff4a7ed96 '<unknown (@0x7ffff4a7ed96)>'
+#  5 0x00007ffff4a7f207 '<unknown (@0x7ffff4a7f207)>'
+#  6 0x00007ffff5faf29d '<unknown (@0x7ffff5faf29d)>'
+#  7 0x00007ffff5f63427 '<unknown (@0x7ffff5f63427)>'
+#  8 0x00007ffff55a9e29 '<unknown (@0x7ffff55a9e29)>'
+# Current time Wed Apr 29 22:35:25 2026
+# Program = hdlclient
+# Id = "2025.2"
+# Version = "2025.05"
+# Date = "May 31 2025"
+# Platform = "linux_x86_64"
+# Signature = 56d08c150da5ece83175e6142ed09c67
+# lib_addresses = libc.so.6=0x00007ffff4800000,libQt5Core.so.5=0x00007ffff6600000,libqxcb-glx-integration.so=0x00007ffff4a76000,libQt5Gui.so.5=0x00007ffff5e00000,libQt5Widgets.so.5=0x00007ffff5400000
+# End of Stack Trace
+
+#  0 0x00007ffff489eb2c '<unknown (@0x7ffff489eb2c)>'
+#  1 0x00007ffff484527e '<unknown (@0x7ffff484527e)>'
+#  2 0x00007ffff48288ff '<unknown (@0x7ffff48288ff)>'
+#  3 0x00007ffff66bbcf1 '<unknown (@0x7ffff66bbcf1)>'
+#  4 0x00007ffff4a7ed96 '<unknown (@0x7ffff4a7ed96)>'
+#  5 0x00007ffff4a7f207 '<unknown (@0x7ffff4a7f207)>'
+#  6 0x00007ffff5faf29d '<unknown (@0x7ffff5faf29d)>'
+#  7 0x00007ffff5f63427 '<unknown (@0x7ffff5f63427)>'
+#  8 0x00007ffff55a9e29 '<unknown (@0x7ffff55a9e29)>'
