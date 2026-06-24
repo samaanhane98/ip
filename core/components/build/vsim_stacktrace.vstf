@@ -1,0 +1,18 @@
+# Current time Wed Jun 24 22:39:56 2026
+# Program = vsim
+# Id = "2025.2"
+# Version = "2025.05"
+# Date = "May 31 2025"
+# Platform = "linux_x86_64"
+# Signature = ffe208fd14a214d6e362cbfb19afdbad
+# --> START OF USERCODE
+# 0    0x00007ffff2f1670b: '_ZN16FliShutdownCbHdl3runEv + 0x000000000000001b' in '/home/sam/FPGA/ip/sim_env/lib/python3.12/site-packages/cocotb/libs/libcocotbfli_modelsim.so'
+# 1    0x00007ffff2f167e7: '_Z19handle_fli_callbackPv + 0x0000000000000027' in '/home/sam/FPGA/ip/sim_env/lib/python3.12/site-packages/cocotb/libs/libcocotbfli_modelsim.so'
+# <-- END OF USERCODE
+# 2    0x0000000000c4b997: '<unknown (@0xc4b997)>'
+# 3    0x00000000011493e4: '<unknown (@0x11493e4)>'
+# 4    0x0000000000c726b6: '<unknown (@0xc726b6)>'
+# 5    0x0000000000c7551d: '<unknown (@0xc7551d)>'
+# End of Stack Trace
+
+
