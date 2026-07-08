@@ -2,4 +2,9 @@
 **/sim_build
 **/*.xml
 **/*.vcd
+**/*.wlf
+
+*.log
+
 sim_env/
+
