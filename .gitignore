@@ -3,6 +3,8 @@
 **/*.xml
 **/*.vcd
 **/*.wlf
+**/*.vstf
+**/transcript
 
 *.log
 
