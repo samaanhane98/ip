@@ -9,7 +9,7 @@ IP_ROOT = ../../..
 VHDL_SOURCES = $(IP_ROOT)/core/packages/math_pkg.vhd
 VHDL_SOURCES += $(IP_ROOT)/core/ram/vhdl_sources/ram_sdp.vhd
 
-export PYTHONPATH=../sim
+export PYTHONPATH=../py_tc
 
 COCOTB_TOPLEVEL = ram_sdp
 COCOTB_TEST_MODULES =ram_sdp_tc
