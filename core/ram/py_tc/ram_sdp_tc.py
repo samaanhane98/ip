@@ -4,9 +4,8 @@ from cocotb.triggers import RisingEdge, Timer, ClockCycles, ReadOnly , NextTimeS
 
 
 class RamSdp:
-	def __init__(self, dut, read_delay=0):
+	def __init__(self, dut):
 		self.dut = dut
-		self.read_delay = read_delay
 
 	async def write(self, address, data):
 		self.dut.write_address.value = address
@@ -26,21 +25,13 @@ class RamSdp:
 		await RisingEdge(self.dut.clk)
 		self.dut.read_ena.value = 0
 
-		cycles = 0
-		while True:
-			await ReadOnly()
-			valid = self.dut.read_valid.value == 1
-			data = self.dut.read_data.value
-			await NextTimeStep()
-			if valid:
-				return data
-			cycles += 1
-			await RisingEdge(self.dut.clk)
+		data = self.dut.read_data.value
+		return data
 
 
 @cocotb.test()
 async def ram_sdp_test(dut):
-	ram = RamSdp(dut, 2)
+	ram = RamSdp(dut)
 
 	cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
