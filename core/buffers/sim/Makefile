@@ -28,10 +28,3 @@ view:
 	else \
 		echo "waveform.vcd not found — run 'make sim' first."; \
 	fi
-
-#clean:
-#	rm qrun.log;
-#	rm results.xml;
-#	rm -rf sim_build;
-#	rm transcript;
-#	rm waveform.*;
