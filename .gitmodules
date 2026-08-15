@@ -1,0 +1,3 @@
+[submodule "modules/open-logic"]
+	path = modules/open-logic
+	url = https://github.com/open-logic/open-logic.git
