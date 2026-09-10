@@ -4,7 +4,7 @@ library ieee;
 
 package math_pkg is
     function log2(depth : in natural) return natural;
-    function log2ceil(depth : in natural) return natural;
+    function log2ceil(arg : in natural) return natural;
 end package;
 
 package body math_pkg is

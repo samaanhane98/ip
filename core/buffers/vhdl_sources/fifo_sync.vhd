@@ -6,113 +6,72 @@ library ieee;
 
 entity fifo_sync is
     generic (
-        g_storage    : string                := "auto";
-        g_data_width : integer               := 32;
-        g_depth      : integer               := 16
+        g_width              : POSITIVE  := 32;
+        g_depth              : POSITIVE  := 32;
+        g_almost_full_ena    : BOOLEAN   := false;
+        g_almost_full_level  : natural   := 0;
+        g_almost_empty_ena   : BOOLEAN   := false;
+        g_almost_empty_level : natural   := 0;
+        g_ram_style          : string    := "auto";
+        g_ram_behavior       : string    := "RBW";
+        g_ready_reset_state  : STD_LOGIC := '1'
     );
     port (
+        -- Input interface
         clk          : in  std_logic;
         reset        : in  std_logic;
 
-        write_data   : in  std_logic_vector(g_data_width - 1 downto 0);
-        write_valid  : in  std_logic;
-        write_ready  : out std_logic := '1';
-        write_level  : out std_logic_vector(integer(log2(g_depth)) - 1 downto 0);
+        wr_data      : in  std_logic_vector(g_width - 1 downto 0);
+        wr_valid     : in  std_logic := '1';
+        wr_ready     : out std_logic;
+        wr_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
 
-        read_data    : out std_logic_vector(g_data_width - 1 downto 0);
-        read_valid   : out std_logic;
-        read_ready   : in  std_logic;
-        read_level   : out std_logic_vector(integer(log2(g_depth)) - 1 downto 0);
+        -- Output Interface
+        rd_data      : out std_logic_vector(g_width - 1 downto 0);
+        rd_valid     : out std_logic;
+        rd_ready     : in  std_logic := '1';
+        rd_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
 
-        -- Status
+        -- Output Status
         full         : out std_logic;
-        almost_full  : out std_logic;
         empty        : out std_logic;
+        almost_full  : out std_logic;
         almost_empty : out std_logic
+
     );
 end entity;
 
-architecture behavior of fifo_sync is
-    signal read_pointer  : std_logic_vector(integer(log2((g_depth))) - 1 downto 0);
-    signal write_pointer : std_logic_vector(integer(log2((g_depth))) - 1 downto 0);
-
-    signal write_ena : std_logic;
+architecture structure of fifo_sync is
 begin
-    write_ready <= not full;
-    read_valid  <= not empty;
-
-    write_level <= write_pointer;
-    read_level  <= read_pointer;
-
-    p_full_gen: process (write_pointer, read_pointer)
-    begin
-        full <= '0';
-        almost_full <= '0';
-        if unsigned(write_pointer) + 1 = unsigned(read_pointer) then
-            full <= '1';
-        end if;
-
-        if unsigned(write_pointer) + 2 = unsigned(read_pointer) then
-            almost_full <= '1';
-        end if;
-
-    end process;
-
-    p_empty_gen: process (write_pointer, read_pointer)
-    begin
-        empty <= '0';
-        almost_empty <= '0';
-        if read_pointer = write_pointer then
-            empty <= '1';
-        end if;
-
-        if unsigned(read_pointer) + 1 = unsigned(write_pointer) then
-            almost_empty <= '1';
-        end if;
-    end process;
-
-    p_write: process (clk)
-    begin
-        if rising_edge(clk) then
-            if write_valid = '1' and write_ready = '1' and full = '0' then
-                write_pointer <= std_logic_vector(unsigned(write_pointer) + 1);
-            end if;
-
-            if reset = '1' then
-                write_pointer <= (others => '0');
-            end if;
-        end if;
-    end process;
-
-    p_read: process (clk)
-    begin
-        if rising_edge(clk) then
-            if read_valid = '1' and read_ready = '1' and empty = '0' then
-                read_pointer <= std_logic_vector(unsigned(read_pointer) + 1);
-            end if;
-
-            if reset = '1' then
-                read_pointer <= (others => '0');
-            end if;
-        end if;
-    end process;
-
-    write_ena <= write_valid and write_ready;
-
-    i_ram_sdp: entity work.ram_sdp
+    i_olo_base_fifo_sync: entity work.olo_base_fifo_sync
         generic map (
-            g_storage    => g_storage,
-            g_ram_width  => g_data_width,
-            g_ram_depth  => g_depth
+            Width_g         => g_width,
+            Depth_g         => g_depth,
+            AlmFullOn_g     => g_almost_full_ena,
+            AlmFullLevel_g  => g_almost_full_level,
+            AlmEmptyOn_g    => g_almost_empty_ena,
+            AlmEmptyLevel_g => g_almost_empty_level,
+            RamStyle_g      => g_ram_style,
+            RamBehavior_g   => g_ram_behavior,
+            ReadyRstState_g => g_ready_reset_state
         )
         port map (
-            clk           => clk,
-            reset         => reset,
-            read_address  => read_pointer,
-            read_ena      => '1',
-            read_data     => read_data,
-            write_address => write_pointer,
-            write_ena     => write_ena,
-            write_data    => write_data
+            -- Input interface
+            Clk       => clk,
+            Rst       => reset,
+            In_Data   => wr_data,
+            In_Valid  => wr_valid,
+            In_Ready  => wr_ready,
+            In_Level  => wr_level,
+            -- Output Interface
+            Out_Data  => rd_data,
+            Out_Valid => rd_valid,
+            Out_Ready => rd_ready,
+            Out_Level => rd_level,
+            -- Output 
+            Full      => full,
+            Empty     => empty,
+            AlmFull   => almost_full,
+            AlmEmpty  => almost_empty
         );
 end architecture;
