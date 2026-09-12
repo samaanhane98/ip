@@ -2,12 +2,13 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-entity rgmii is
+entity rgmii_rx is
     port (
         clk        : in  std_logic;
         reset      : in  std_logic;
 
-        ref_clk    : in  std_logic;
+        idelay_ref_clk    : in  std_logic;
+        idelay_ref_reset  : in  std_logic;
 
         rxc        : in  std_logic;
         rx_ctl     : in  std_logic;
@@ -19,34 +20,25 @@ entity rgmii is
     );
 end entity;
 
-architecture behavior of rgmii is
-    signal ref_reset    : std_logic;
-    signal rx_ctl_delay : std_logic;
-    signal rd_delay     : std_logic_vector(3 downto 0);
+architecture behavior of rgmii_rx is
+    signal rx_ctl_deskew : std_logic;
+    signal rd_deskew     : std_logic_vector(3 downto 0);
 
 begin
-    i_reset_synchronizer: entity work.reset_synchronizer
-        port map (
-            reset     => reset,
-            dst_clk   => ref_clk,
-            dst_reset => ref_reset
-        );
-
-    rgmii_rx_delay_inst: entity work.rgmii_rx_delay
+    i_rgmii_rx_deskew: entity work.rgmii_rx_deskew
         generic map (
             g_idelay_value     => 20,
             g_refclk_frequency => 200.0,
             g_iodelay_group    => "rgmii_idelay_group"
         )
         port map (
-            idelay_refclk      => ref_clk,
-            idelay_rst         => ref_reset,
-            idelay_rdy         => open,
-            rgmii_rxc          => rxc,
-            rgmii_rd           => rd,
-            rgmii_rx_ctl       => rx_ctl,
-            rgmii_rd_delay     => rd_delay,
-            rgmii_rx_ctl_delay => rx_ctl_delay
+            idelay_ref_clk             => idelay_ref_clk,
+            idelay_ref_reset             => idelay_ref_reset,
+            rgmii_rxc           => rxc,
+            rgmii_rd            => rd,
+            rgmii_rx_ctl        => rx_ctl,
+            rgmii_rd_deskew     => rd_deskew,
+            rgmii_rx_ctl_deskew => rx_ctl_deskew
         );
 
     i_rgmii_to_data: entity work.rgmii_to_data
@@ -54,8 +46,8 @@ begin
             clk        => clk,
             reset      => reset,
             rxc        => rxc,
-            rx_ctl     => rx_ctl_delay,
-            rd         => rd_delay,
+            rx_ctl     => rx_ctl_deskew,
+            rd         => rd_deskew,
             data_out   => data_out,
             data_valid => data_valid,
             data_error => data_error

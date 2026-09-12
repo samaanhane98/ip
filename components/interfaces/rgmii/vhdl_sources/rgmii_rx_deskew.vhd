@@ -4,27 +4,26 @@ library ieee;
 library unisim;
     use unisim.vcomponents.all;
 
-entity rgmii_rx_delay is
+entity rgmii_rx_deskew is
     generic (
         g_idelay_value     : positive := 20;
         g_refclk_frequency : real     := 200.0;
         g_iodelay_group    : string   := "rgmii_idelay_group"
     );
     port (
-        idelay_refclk      : in  std_logic;
-        idelay_rst         : in  std_logic;
-        idelay_rdy         : out std_logic;
+        idelay_ref_clk      : in  std_logic;
+        idelay_ref_reset    : in  std_logic;
 
-        rgmii_rxc          : in  std_logic;
-        rgmii_rd           : in  std_logic_vector(3 downto 0);
-        rgmii_rx_ctl       : in  std_logic;
+        rgmii_rxc           : in  std_logic;
+        rgmii_rd            : in  std_logic_vector(3 downto 0);
+        rgmii_rx_ctl        : in  std_logic;
 
-        rgmii_rd_delay     : out std_logic_vector(3 downto 0);
-        rgmii_rx_ctl_delay : out std_logic
+        rgmii_rd_deskew     : out std_logic_vector(3 downto 0);
+        rgmii_rx_ctl_deskew : out std_logic
     );
 end entity;
 
-architecture structure of rgmii_rx_delay is
+architecture structure of rgmii_rx_deskew is
 
 begin
     gen_idelayctrl: block
@@ -33,9 +32,9 @@ begin
     begin
         IDELAYCTRL_inst: IDELAYCTRL
         port map (
-            RDY    => idelay_rdy,
-            REFCLK => idelay_refclk,
-            RST    => idelay_rst
+            RDY    => open,
+            REFCLK => idelay_ref_clk,
+            RST    => idelay_ref_reset
         );
     end block;
 
@@ -56,7 +55,7 @@ begin
             )
             port map (
                 CNTVALUEOUT => open,
-                DATAOUT     => rgmii_rd_delay(i),
+                DATAOUT     => rgmii_rd_deskew(i),
                 C           => rgmii_rxc,
                 CE          => '0',
                 CINVCTRL    => '0',
@@ -75,29 +74,29 @@ begin
         attribute IODELAY_GROUP of IDELAYE2_ctrl_inst : label is g_iodelay_group;
     begin
         IDELAYE2_ctrl_inst: IDELAYE2
-            generic map (
-                CINVCTRL_SEL          => "FALSE",
-                DELAY_SRC             => "IDATAIN",
-                HIGH_PERFORMANCE_MODE => "FALSE",
-                IDELAY_TYPE           => "FIXED",
-                IDELAY_VALUE          => g_idelay_value,
-                PIPE_SEL              => "FALSE",
-                REFCLK_FREQUENCY      => g_refclk_frequency,
-                SIGNAL_PATTERN        => "DATA"
-            )
-            port map (
-                CNTVALUEOUT => open,
-                DATAOUT     => rgmii_rx_ctl_delay,
-                C           => rgmii_rxc,
-                CE          => '0',
-                CINVCTRL    => '0',
-                CNTVALUEIN  => (others => '0'),
-                DATAIN      => '0',
-                IDATAIN     => rgmii_rx_ctl,
-                INC         => '0',
-                LD          => '0',
-                LDPIPEEN    => '0',
-                REGRST      => '0'
-            );
+        generic map (
+            CINVCTRL_SEL          => "FALSE",
+            DELAY_SRC             => "IDATAIN",
+            HIGH_PERFORMANCE_MODE => "FALSE",
+            IDELAY_TYPE           => "FIXED",
+            IDELAY_VALUE          => g_idelay_value,
+            PIPE_SEL              => "FALSE",
+            REFCLK_FREQUENCY      => g_refclk_frequency,
+            SIGNAL_PATTERN        => "DATA"
+        )
+        port map (
+            CNTVALUEOUT => open,
+            DATAOUT     => rgmii_rx_ctl_deskew,
+            C           => rgmii_rxc,
+            CE          => '0',
+            CINVCTRL    => '0',
+            CNTVALUEIN  => (others => '0'),
+            DATAIN      => '0',
+            IDATAIN     => rgmii_rx_ctl,
+            INC         => '0',
+            LD          => '0',
+            LDPIPEEN    => '0',
+            REGRST      => '0'
+        );
     end block;
 end architecture;

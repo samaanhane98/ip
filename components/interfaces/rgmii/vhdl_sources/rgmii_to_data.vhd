@@ -73,7 +73,7 @@ begin
     i_cdc_fifo: entity work.fifo_async
         generic map (
             g_width        => 10,
-            g_depth        => 2,
+            g_depth        => 16,
             g_optimization => "SPEED"
         )
         port map (
