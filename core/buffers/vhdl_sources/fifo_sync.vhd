@@ -6,7 +6,6 @@ library ieee;
 
 entity fifo_sync is
     generic (
-        g_width              : POSITIVE  := 32;
         g_depth              : POSITIVE  := 32;
         g_almost_full_ena    : BOOLEAN   := false;
         g_almost_full_level  : natural   := 0;
@@ -21,18 +20,18 @@ entity fifo_sync is
         clk          : in  std_logic;
         reset        : in  std_logic;
 
-        wr_data      : in  std_logic_vector(g_width - 1 downto 0);
+        wr_data      : in  std_logic_vector;
         wr_valid     : in  std_logic := '1';
         wr_ready     : out std_logic;
-        wr_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
-
+        
         -- Output Interface
-        rd_data      : out std_logic_vector(g_width - 1 downto 0);
+        rd_data      : out std_logic_vector;
         rd_valid     : out std_logic;
         rd_ready     : in  std_logic := '1';
-        rd_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
-
+        
         -- Output Status
+        wr_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
+        rd_level     : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
         full         : out std_logic;
         empty        : out std_logic;
         almost_full  : out std_logic;
@@ -45,7 +44,7 @@ architecture structure of fifo_sync is
 begin
     i_olo_base_fifo_sync: entity work.olo_base_fifo_sync
         generic map (
-            Width_g         => g_width,
+            Width_g         => wr_data'length,
             Depth_g         => g_depth,
             AlmFullOn_g     => g_almost_full_ena,
             AlmFullLevel_g  => g_almost_full_level,
