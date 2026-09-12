@@ -4,19 +4,19 @@ library ieee;
 
 entity rgmii_rx is
     port (
-        clk        : in  std_logic;
-        reset      : in  std_logic;
+        clk              : in  std_logic;
+        reset            : in  std_logic;
 
-        idelay_ref_clk    : in  std_logic;
-        idelay_ref_reset  : in  std_logic;
+        idelay_ref_clk   : in  std_logic;
+        idelay_ref_reset : in  std_logic;
 
-        rxc        : in  std_logic;
-        rx_ctl     : in  std_logic;
-        rd         : in  std_logic_vector(3 downto 0);
+        rxc              : in  std_logic;
+        rx_ctl           : in  std_logic;
+        rd               : in  std_logic_vector(3 downto 0);
 
-        data_out   : out std_logic_vector(7 downto 0);
-        data_valid : out std_logic;
-        data_error : out std_logic
+        data_out         : out std_logic_vector(7 downto 0);
+        data_valid       : out std_logic;
+        data_error       : out std_logic
     );
 end entity;
 
@@ -32,8 +32,8 @@ begin
             g_iodelay_group    => "rgmii_idelay_group"
         )
         port map (
-            idelay_ref_clk             => idelay_ref_clk,
-            idelay_ref_reset             => idelay_ref_reset,
+            idelay_ref_clk      => idelay_ref_clk,
+            idelay_ref_reset    => idelay_ref_reset,
             rgmii_rxc           => rxc,
             rgmii_rd            => rd,
             rgmii_rx_ctl        => rx_ctl,
