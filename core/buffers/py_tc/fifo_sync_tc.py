@@ -1,37 +1,11 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ClockCycles, ReadOnly 
+from cocotb.triggers import RisingEdge, ClockCycles
 
 from test_harness import TestHarness, test
 
-class FifoSync:
-    def __init__(self, dut):
-        self.dut = dut
+from fifo_sync import FifoSync
 
-    async def write(self, data):
-        self.dut.wr_data.value = data
-        self.dut.wr_valid.value = 1
-
-        # Hold valid until the cycle where ready is actually seen high
-        while True:
-            await RisingEdge(self.dut.clk)
-            if self.dut.wr_ready.value == 1:
-                break
-
-        self.dut.wr_valid.value = 0
-
-    async def read(self):
-        self.dut.rd_ready.value = 1
-
-        while True:
-            await RisingEdge(self.dut.clk)
-            if self.dut.rd_valid.value == 1:
-                data = self.dut.rd_data.value
-                break
-
-        self.dut.rd_ready.value = 0
-
-        return data
 
 class TestCase(TestHarness):
     def __init__(self, dut):
@@ -94,7 +68,7 @@ class TestCase(TestHarness):
         for val in write_values:
             await self.fifo.write(val)
 
-        await RisingEdge(self.dut.clk)
+        await RisingEdge(self.dut.full)
         assert self.dut.full.value
 
         # Drain FIFO
@@ -104,12 +78,8 @@ class TestCase(TestHarness):
 
             _ = await self.fifo.read()
 
-        await RisingEdge(self.dut.clk)
+        await RisingEdge(self.dut.empty)
         assert self.dut.empty.value
-
-    @test
-    async def test_004_level_test(self):
-        pass
 
 @cocotb.test()
 async def main(dut):

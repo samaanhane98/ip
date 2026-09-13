@@ -20,7 +20,7 @@ class TestCase(TestHarness):
         self.source = AxisSourceBfm(self.dut.i_dut, "stream_in", self.dut.clk)
         self.sink = AxisSinkBfm(self.dut.i_dut, "stream_out", self.dut.clk)
 
-    async def reset_tc(self, cycles = 10):
+    async def reset_tc(self, cycles = 100):
         self.dut.reset.value = 1
 
         await ClockCycles(self.dut.clk, cycles)
@@ -44,13 +44,12 @@ class TestCase(TestHarness):
         write_level = self.dut.wr_level.value.to_unsigned()
         assert write_level == amount
 
+        # Reset and enable for other tests
+        await self.reset_tc()
         self.sink.start()
 
     @test
     async def test_002_read_test(self):
-        # TODO: FIFO is not empty after reset
-        await self.reset_tc()
-
         amount = 0x10
 
         for i in range(amount):
@@ -61,6 +60,29 @@ class TestCase(TestHarness):
             recv = await self.sink.receive()
 
             assert data.hex() == recv.hex()
+
+    @test
+    async def test_003_empty_full_test(self):
+        # Explicitly disable sink so we can monitor the write level
+        self.sink.stop()
+        self.dut.stream_out_ready.value = 0
+
+        assert self.dut.empty.value
+
+        amount = self.dut.g_depth.value
+        for i in range(amount):
+            await self.source.send(bytes(1))
+
+        await RisingEdge(self.dut.full)
+        assert self.dut.full.value
+
+        # Drain FIFO
+        self.sink.start()
+        for _ in range(amount):
+            _ = await self.sink.receive()
+
+        await RisingEdge(self.dut.empty)
+        assert self.dut.empty.value
 
 
 

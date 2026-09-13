@@ -6,22 +6,18 @@ TOPLEVEL_LANG ?= vhdl
 
 IP_ROOT = ../../..
 
-VHDL_SOURCES = $(IP_ROOT)/core/packages/math_pkg.vhd
-VHDL_SOURCES += $(IP_ROOT)/core/buffers/vhdl_sources/fifo_sync.vhd
-VHDL_SOURCES += $(IP_ROOT)/modules/open-logic/src/base/vhdl/*.vhd
+VHDL_SOURCES = $(abspath $(IP_ROOT)/core/packages/*.vhd)
+VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/*.vhd)
+VHDL_SOURCES += $(abspath $(IP_ROOT)/core/buffers/vhdl_*/*.vhd)
 
-COCOTB_TOPLEVEL = fifo_sync
-COCOTB_TEST_MODULES =fifo_sync_tc
+#COCOTB_TOPLEVEL = fifo_sync_dut
+#COCOTB_TEST_MODULES = fifo_sync_tc
 
-#VHDL_SOURCES = $(IP_ROOT)/core/packages/math_pkg.vhd
-#VHDL_SOURCES += $(IP_ROOT)/core/buffers/vhdl_sources/fifo_async.vhd
-#VHDL_SOURCES += $(IP_ROOT)/modules/open-logic/src/base/vhdl/*.vhd
-
-#COCOTB_TOPLEVEL = fifo_async
-#COCOTB_TEST_MODULES =fifo_async_tc
+COCOTB_TOPLEVEL = fifo_async_dut
+COCOTB_TEST_MODULES = fifo_async_tc
 
 
-export PYTHONPATH= ../py_tc:$(abspath $(IP_ROOT)/make_includes/python)
+export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/python)
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
