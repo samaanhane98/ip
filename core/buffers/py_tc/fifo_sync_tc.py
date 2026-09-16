@@ -47,8 +47,6 @@ class TestCase(TestHarness):
         # Drain FIFO
         # For this test, we explicitly read amount times
         for _ in range(amount):
-            await RisingEdge(self.dut.clk)
-
             rd_val = await self.fifo.read()
             read_values.append(rd_val)
 
@@ -74,8 +72,6 @@ class TestCase(TestHarness):
         # Drain FIFO
         # For this test, we explicitly read amount times
         for _ in range(amount):
-            await RisingEdge(self.dut.clk)
-
             _ = await self.fifo.read()
 
         await RisingEdge(self.dut.empty)
