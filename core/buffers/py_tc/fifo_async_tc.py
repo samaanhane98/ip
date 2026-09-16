@@ -29,7 +29,7 @@ class TestCase(TestHarness):
         self.dut.rd_reset.value = 0
 
         # A few cycles are necessary after reset
-        await ClockCycles(self.dut.rd_clk, 5)
+        await ClockCycles(self.dut.wr_clk, 5)
     
     @test
     async def test_001_write_test(self):

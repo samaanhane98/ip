@@ -11,8 +11,11 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/*.vhd)
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/buffers/vhdl_sources/*.vhd)
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis/vhdl_*/*.vhd)
 
-COCOTB_TOPLEVEL = axis_fifo_sync_dut
-COCOTB_TEST_MODULES = axis_fifo_sync_tc
+#COCOTB_TOPLEVEL = axis_fifo_sync_dut
+#COCOTB_TEST_MODULES = axis_fifo_sync_tc
+
+COCOTB_TOPLEVEL = axis_fifo_async_dut
+COCOTB_TEST_MODULES = axis_fifo_async_tc
 
 export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/python)
 

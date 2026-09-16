@@ -23,7 +23,7 @@ entity fifo_async is
         wr_reset        : in  std_logic;
 
         wr_data         : in  std_logic_vector;
-        wr_valid        : in  std_logic := '1';
+        wr_valid        : in  std_logic;
         wr_ready        : out std_logic;
 
         -- Input Status
@@ -38,7 +38,7 @@ entity fifo_async is
         rd_reset        : in  std_logic;
         rd_data         : out std_logic_vector;
         rd_valid        : out std_logic;
-        rd_ready        : in  std_logic := '1';
+        rd_ready        : in  std_logic;
 
         -- Output Status
         rd_full         : out std_logic;
