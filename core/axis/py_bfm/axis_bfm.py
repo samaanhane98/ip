@@ -1,23 +1,27 @@
 from dataclasses import dataclass
 from typing import Self
 
-
 import cocotb
 from cocotb.triggers import RisingEdge
 from cocotb.queue import Queue
 
+from driver import Driver
+from monitor import Monitor
+from transfer import TransferRecord
+
 
 @dataclass
-class AxisBeat:
+class AxisBeat(TransferRecord):
     tvalid : int = 0
     tlast  : int = 0
     tdata  : int = 0
     tuser  : int = 0
     tkeep  : int = 0
 
-    @staticmethod
-    def into_beats(data: bytearray, bus_width: int) -> list[Self]:
-        chunk_size = bus_width // 8
+    bus_width: int = 0
+
+    def from_bytes(self, data: bytearray) -> list[Self]:
+        chunk_size = self.bus_width // 8
         chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
         remainder = len(data) % chunk_size
@@ -31,8 +35,7 @@ class AxisBeat:
 
         return beats
 
-    @staticmethod
-    def to_bytes(beats: list[Self]) -> bytearray:
+    def to_bytes(self, beats: list[Self]) -> bytearray:
         result = bytearray()
 
         for beat in beats:
@@ -52,22 +55,23 @@ class AxisBeat:
                 result += bytes([byte])
 
         return result
+    
+    def last(self) -> bool:
+        return self.tlast == 1
         
 
 
-class AxisSourceBfm:
+class AxisSourceBfm(Driver):
     def __init__(self, dut: object, name: str, clock: object):
+        super().__init__()
         self.dut = dut
         self.name = name
         self.clock = clock
 
-        self._queue = Queue[AxisBeat]()
-        self._coro = None
-
-        self._signals = {}
         self._map_signals()
         self._bus_width = len(self._signals['tdata'].range)
-
+        self._record_type = AxisBeat(bus_width=self._bus_width)
+        
         self.start()
 
     def _map_signals(self):
@@ -87,22 +91,6 @@ class AxisSourceBfm:
         self._signals['tdata'] = bus.tdata
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
-
-    def start(self) -> None:
-        if self._coro is not None:
-            raise RuntimeError("Source already started")
-        self._coro = cocotb.start_soon(self._run())
-
-    def stop(self) -> None:
-        if self._coro is None:
-            raise RuntimeError("Sink never started")
-        self._coro.cancel()
-        self._coro = None
-
-    async def _run(self) -> None:
-        while True:
-            transfer = await self._queue.get()
-            await self.send_transfer(transfer)
 
     async def send_transfer(self, beat: AxisBeat):
         self._signals['tdata'].value = int.from_bytes(beat.tdata, byteorder='little')
@@ -118,23 +106,20 @@ class AxisSourceBfm:
         self._signals['tvalid'].value = 0
 
     async def send(self, data: bytearray):
-        beats = AxisBeat.into_beats(data, self._bus_width)
+        beats = AxisBeat(bus_width=self._bus_width).from_bytes(data)
         
-        for beat in beats:
-            await self._queue.put(beat)
+        await super().send(beats)
 
-class AxisSinkBfm:
+class AxisSinkBfm(Monitor):
     def __init__(self, dut: object, name: str, clock: object):
+        super().__init__()
         self.dut = dut
         self.name = name
         self.clock = clock
 
-        self._queue = Queue[AxisBeat]()
-        self._coro = None
-
-        self._signals = {}
         self._map_signals()
         self._bus_width = len(self._signals['tdata'].range)
+        self._record_type = AxisBeat(bus_width=self._bus_width)
 
         self.start()
 
@@ -155,22 +140,6 @@ class AxisSinkBfm:
         self._signals['tdata'] = bus.tdata
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
-
-    def start(self) -> None:
-        if self._coro is not None:
-            raise RuntimeError("Sink already started")
-        self._coro = cocotb.start_soon(self._run())
-
-    def stop(self) -> None:
-        if self._coro is None:
-            raise RuntimeError("Sink never started")
-        self._coro.cancel()
-        self._coro = None
-
-    async def _run(self) -> None:
-        while True:
-            transfer = await self.receive_transfer()
-            await self._queue.put(transfer)
 
     async def receive_transfer(self) -> AxisBeat:
         self._signals['ready'].value = 1
@@ -190,16 +159,6 @@ class AxisSinkBfm:
         )
 
     async def receive(self) -> bytearray:
-        beats = []
-
-        while True:
-            beat = await self._queue.get()
-            beats.append(beat)
-
-            if beat.tlast == 1:
-                break
-
-        data = AxisBeat.to_bytes(beats)
-        return data
+        return await super().receive()
 
         

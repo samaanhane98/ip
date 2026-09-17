@@ -20,7 +20,7 @@ class TestCase(TestHarness):
         self.source = AxisSourceBfm(self.dut.i_dut, "stream_in", self.dut.clk)
         self.sink = AxisSinkBfm(self.dut.i_dut, "stream_out", self.dut.clk)
 
-    async def reset_tc(self, cycles = 100):
+    async def reset_tc(self, cycles = 10):
         self.dut.reset.value = 1
 
         await ClockCycles(self.dut.clk, cycles)
@@ -41,7 +41,7 @@ class TestCase(TestHarness):
 
         await ClockCycles(self.dut.clk, 1)
 
-        write_level = self.dut.wr_level.value.to_unsigned()
+        write_level = self.dut.stream_in_level.value.to_unsigned()
         assert write_level == amount
 
         # Reset and enable for other tests

@@ -17,7 +17,7 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis/vhdl_*/*.vhd)
 COCOTB_TOPLEVEL = axis_fifo_async_dut
 COCOTB_TEST_MODULES = axis_fifo_async_tc
 
-export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/python)
+export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/py_tc)
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim

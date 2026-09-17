@@ -28,8 +28,8 @@ entity axis_fifo_sync is
         stream_out_ready : in  std_logic;
 
         -- Output Status
-        wr_level         : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
-        rd_level         : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
+        stream_in_level  : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
+        stream_out_level : out std_logic_vector(log2ceil(g_depth + 1) - 1 downto 0);
         full             : out std_logic;
         empty            : out std_logic;
         almost_full      : out std_logic;
@@ -68,8 +68,8 @@ begin
             rd_valid     => rd_valid,
             rd_ready     => stream_out_ready,
 
-            wr_level     => wr_level,
-            rd_level     => rd_level,
+            wr_level     => stream_in_level,
+            rd_level     => stream_out_level,
             full         => full,
             empty        => empty,
             almost_full  => almost_full,
