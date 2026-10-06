@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Dict
+from typing import Generic, TypeVar, Dict, TypeAlias, Any, Tuple
 
 import cocotb
 from cocotb.queue import Queue
@@ -7,14 +7,14 @@ from cocotb.queue import Queue
 from transfer import TransferRecord
 
 T = TypeVar("T", bound=TransferRecord)
+Meta: TypeAlias = dict[str, Any] | bytearray | None
 
 class Monitor(ABC, Generic[T]):
-    # Need pointer to determine concreate type
     _record_type: type[T]
 
     def __init__(self):
         self._queue: "Queue[T]" = Queue()
-        self._coro: object = None
+        self._coro: cocotb.Task | None = None
         self._signals: Dict[str, object] = {}
 
     def start(self) -> None:
@@ -30,24 +30,17 @@ class Monitor(ABC, Generic[T]):
 
     async def _run(self) -> None:
         while True:
-            transfer = await self.receive_transfer()
+            transfer = await self.transfer()
             await self._queue.put(transfer)
 
     @abstractmethod
     def _map_signals(self) -> None: ...
 
     @abstractmethod
-    def receive_transfer(self) -> "T": ...
+    def transfer(self) -> T: ...
 
-    async def receive(self) -> bytearray:
-        transfers = []
+    @abstractmethod
+    def receive_transfer(self) -> T: ...
 
-        while True:
-            transfer = await self._queue.get()
-            transfers.append(transfer)
-
-            if transfer.last():
-                break
-
-        data = self._record_type.to_bytes(transfers)
-        return data
+    @abstractmethod
+    async def receive(self) -> Tuple[bytearray, Meta | None]: ...

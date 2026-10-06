@@ -18,10 +18,10 @@ class AxisBeat(TransferRecord):
     tuser  : int = 0
     tkeep  : int = 0
 
-    bus_width: int = 0
+    _bus_width: int = 0
 
     def from_bytes(self, data: bytearray) -> list[Self]:
-        chunk_size = self.bus_width // 8
+        chunk_size = self._bus_width // 8
         chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
         remainder = len(data) % chunk_size
@@ -70,7 +70,7 @@ class AxisSourceBfm(Driver):
 
         self._map_signals()
         self._bus_width = len(self._signals['tdata'].range)
-        self._record_type = AxisBeat(bus_width=self._bus_width)
+        self._record_type = AxisBeat(_bus_width=self._bus_width)
         
         self.start()
 
@@ -108,7 +108,8 @@ class AxisSourceBfm(Driver):
     async def send(self, data: bytearray):
         beats = AxisBeat(bus_width=self._bus_width).from_bytes(data)
         
-        await super().send(beats)
+        for beat in beats:
+            await self._queue.put(beat)
 
 class AxisSinkBfm(Monitor):
     def __init__(self, dut: object, name: str, clock: object):
@@ -119,7 +120,7 @@ class AxisSinkBfm(Monitor):
 
         self._map_signals()
         self._bus_width = len(self._signals['tdata'].range)
-        self._record_type = AxisBeat(bus_width=self._bus_width)
+        self._record_type = AxisBeat(_bus_width=self._bus_width)
 
         self.start()
 
@@ -159,6 +160,16 @@ class AxisSinkBfm(Monitor):
         )
 
     async def receive(self) -> bytearray:
-        return await super().receive()
+        transfers = []
+
+        while True:
+            transfer = await self._queue.get()
+            transfers.append(transfer)
+
+            if transfer.last():
+                break
+
+        data = self._record_type.to_bytes(transfers)
+        return data
 
         
