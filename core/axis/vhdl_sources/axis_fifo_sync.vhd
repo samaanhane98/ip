@@ -76,6 +76,9 @@ begin
             almost_empty => almost_empty
         );
 
-    stream_out        <= unpack(stream_out_slv, stream_out);
-    stream_out.tvalid <= rd_valid;
+    p_set_output: process(all)
+    begin
+        stream_out        <= unpack(stream_out_slv, stream_out);
+        stream_out.tvalid <= rd_valid;
+    end process;
 end architecture;

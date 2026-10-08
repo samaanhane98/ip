@@ -43,8 +43,6 @@ architecture structure of axis_packet_fifo_sync is
     subtype t_packet_stream is t_axis(tdata(get_size(packet_in) - 1 downto 0), tkeep(- 1 downto 0), tuser(packet_in_meta'range));
     signal packet_stream_in  : t_packet_stream;
     signal packet_stream_out : t_packet_stream;
-
-    signal rd_valid : std_logic;
 begin
     packet_stream_in.tvalid <= packet_in.valid;
     packet_stream_in.tlast  <= packet_in.last;
@@ -77,6 +75,10 @@ begin
             almost_empty     => almost_empty
         );
 
-    packet_out      <= unpack(packet_stream_out.tdata, packet_out);
-    packet_out_meta <= packet_stream_out.tuser;
+    p_set_output: process (all)
+    begin
+        packet_out <= unpack(packet_stream_out.tdata, packet_out);
+        packet_out.valid <= packet_stream_out.tvalid;
+        packet_out_meta <= packet_stream_out.tuser;
+    end process;
 end architecture;

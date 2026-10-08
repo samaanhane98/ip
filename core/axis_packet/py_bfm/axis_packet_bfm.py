@@ -11,7 +11,7 @@ from monitor import Monitor
 from transfer import TransferRecord
 
 @dataclass
-class AxisPacketBeat(TransferRecord):
+class AxisPacketTransfer(TransferRecord):
     valid: Logic = 0
     last: Logic = 0
     first: Logic = 0
@@ -33,8 +33,8 @@ class AxisPacketBeat(TransferRecord):
         full_keep = (1 << chunk_size) - 1
         last_keep = full_keep if remainder == 0 else (1 << remainder) - 1
 
-        beats = [
-            AxisPacketBeat(
+        transfers = [
+            AxisPacketTransfer(
                 valid=Logic(1), 
                 last=Logic(0), 
                 first=Logic(0), 
@@ -45,32 +45,31 @@ class AxisPacketBeat(TransferRecord):
                 meta_valid=Logic(0)
             ) for chunk in chunks]
 
-        beats[0].first = Logic(1)
-        beats[-1].last = Logic(1)
-        beats[-1].keep = LogicArray.from_unsigned(last_keep, self.width // 8)
+        transfers[0].first = Logic(1)
+        transfers[-1].last = Logic(1)
+        transfers[-1].keep = LogicArray.from_unsigned(last_keep, self.width // 8)
 
-        return beats
+        return transfers
 
-    def to_bytes(self, beats: list[Self]) -> bytearray:
-        raise NotImplementedError()
-        #result = bytearray()
+    def to_bytes(self, transfers: list[Self]) -> bytearray:
+        result = bytearray()
 
-        #for beat in beats:
-        #    data = beat.data
-        #    keep = beat.keep
+        for transfer in transfers:
+            data = transfer.data
+            keep = transfer.keep
 
-        #    bytes_list = [data[i : i - 7] for i in range(data.range.left, data.range.right, -8)]
-        #    bytes_list = list(reversed(bytes_list))
+            bytes_list = [data[i : i - 7] for i in range(data.range.left, data.range.right, -8)]
+            bytes_list = list(reversed(bytes_list))
 
-        #    keep_bits = [bit for bit in keep]
-        #    keep_bits = list(reversed(keep_bits))
+            keep_bits = [bit for bit in keep]
+            keep_bits = list(reversed(keep_bits))
 
-        #    bytes_list = [b for b, k in zip(bytes_list, keep_bits) if int(k) == 1]
+            bytes_list = [b for b, k in zip(bytes_list, keep_bits) if int(k) == 1]
 
-        #    for byte in bytes_list:
-        #        result += bytes([byte])
+            for byte in bytes_list:
+                result += bytes([byte])
 
-        #return result
+        return result
 
     def is_last(self) -> bool:
         return self.last == Logic(1)
@@ -84,7 +83,7 @@ class AxisPacketSourceBfm(Driver):
 
         self._map_signals()
         self._bus_width = len(self._signals['data'].range)
-        self._record_type = AxisPacketBeat(width=self._bus_width)
+        self._record_type = AxisPacketTransfer(width=self._bus_width)
         
         self.start()
 
@@ -112,13 +111,19 @@ class AxisPacketSourceBfm(Driver):
         meta_name = self.name + "_meta"
         self._signals['meta'] = self.dut._get(meta_name)
 
-    async def transfer(self, transfer: AxisPacketBeat):
-        self._signals['data'].value = transfer.data
+    async def transfer(self, transfer: AxisPacketTransfer):
+        signal = self._signals['data']
+        num_signal_bytes = len(signal) // 8
+        num_transfer_bytes = len(transfer.data) // 8
+        
+        value = transfer.data.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
+        self._signals['data'].value = LogicArray.from_bytes(value, byteorder='little')
+
+        self._signals['valid'].value = 1
         self._signals['last'].value = transfer.last
         self._signals['first'].value = transfer.first
         self._signals['drop'].value = transfer.drop
         self._signals['keep'].value = transfer.keep
-        self._signals['valid'].value = transfer.valid
 
 
         meta = transfer.meta
@@ -143,13 +148,13 @@ class AxisPacketSourceBfm(Driver):
         
         self._signals['valid'].value = Logic(0)
 
-    async def send_transfer(self, transfer: AxisPacketBeat):
+    async def send_transfer(self, transfer: AxisPacketTransfer):
         await self._queue.put(transfer)
         return
 
     async def send(self, data: bytearray, meta: Dict[str, Any] | bytearray | None = None):
-        beats = AxisPacketBeat(width=self._bus_width).from_bytes(data)
-        for beat in beats:
+        transfers = AxisPacketTransfer(width=self._bus_width).from_bytes(data)
+        for beat in transfers:
             beat.meta = meta
             await self.send_transfer(beat)
 
@@ -162,7 +167,7 @@ class AxisPacketSinkBfm(Monitor):
 
         self._map_signals()
         self._bus_width = len(self._signals['data'].range)
-        self._record_type = AxisPacketBeat(width=self._bus_width)
+        self._record_type = AxisPacketTransfer(width=self._bus_width)
 
         self.start()
 
@@ -190,14 +195,15 @@ class AxisPacketSinkBfm(Monitor):
         meta_name = self.name + "_meta"
         self._signals['meta'] = self.dut._get(meta_name)
 
-    async def transfer(self) -> Tuple[AxisPacketBeat, Dict[str, Any] | bytearray | None]:
+    async def transfer(self) -> AxisPacketTransfer:
         self._signals['ready'].value = Logic(1)
 
         await RisingEdge(self.clock)
         while self._signals['valid'].value != Logic(1):
             await RisingEdge(self.clock)
 
-        transfer = AxisPacketBeat(width=self._bus_width)
+
+        transfer = AxisPacketTransfer(width=self._bus_width)
         transfer.data = self._signals['data'].value 
         transfer.last = self._signals['last'].value 
         transfer.first = self._signals['first'].value 
@@ -216,7 +222,6 @@ class AxisPacketSinkBfm(Monitor):
         elif self._signals['meta'] is None:
             pass
         else:
-            print(type(self._signals['meta']))
             raise ValueError("Illegal meta value")
         
         transfer.meta = meta
@@ -225,24 +230,24 @@ class AxisPacketSinkBfm(Monitor):
 
         return transfer
 
-    async def receive_transfer(self) -> AxisPacketBeat: 
+    async def receive_transfer(self) -> AxisPacketTransfer: 
         transfer = await self._queue.get()
         return transfer
 
     async def receive(self) -> Tuple[bytearray, Dict[str, Any] | bytearray | None]:
-        beats = []
+        transfers = []
         meta = None
 
         while True:
             transfer = await self.receive_transfer()
-            beats.append(transfer)
+            transfers.append(transfer)
 
             if transfer.is_last():
                 meta = transfer.meta
                 break
 
-        data = AxisPacketBeat(width=self._bus_width).to_bytes(beats)
+        data = AxisPacketTransfer(width=self._bus_width).to_bytes(transfers)
 
-        return (beats, meta)
+        return (data, meta)
 
         

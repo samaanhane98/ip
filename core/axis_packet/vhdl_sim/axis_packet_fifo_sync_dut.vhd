@@ -7,7 +7,7 @@ library ieee;
 
 entity axis_packet_fifo_sync_dut is
     generic (
-        g_depth              : POSITIVE  := 32;
+        g_depth              : POSITIVE  := 16;
         g_almost_full_ena    : BOOLEAN   := false;
         g_almost_full_level  : natural   := 0;
         g_almost_empty_ena   : BOOLEAN   := false;
