@@ -76,7 +76,7 @@ begin
             almost_empty => almost_empty
         );
 
-    p_set_output: process(all)
+    p_set_output: process (all)
     begin
         stream_out        <= unpack(stream_out_slv, stream_out);
         stream_out.tvalid <= rd_valid;

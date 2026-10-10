@@ -18,7 +18,7 @@ class AxisPacketTransfer(TransferRecord):
     drop: Logic = 0
     data: LogicArray = 0
     user: LogicArray | None = 0
-    keep: Logic = 0
+    keep: LogicArray = 0
     
     meta: Dict[str, Any] | bytearray | None = None
     meta_valid: Logic = 0
@@ -35,18 +35,18 @@ class AxisPacketTransfer(TransferRecord):
 
         transfers = [
             AxisPacketTransfer(
-                valid=Logic(1), 
-                last=Logic(0), 
-                first=Logic(0), 
-                drop=Logic(0), 
+                valid=1, 
+                last=0, 
+                first=0, 
+                drop=0, 
                 data=LogicArray.from_bytes(chunk, byteorder='little'), 
                 user=None, 
                 keep=LogicArray.from_unsigned(full_keep, self.width // 8), 
-                meta_valid=Logic(0)
+                meta_valid=0
             ) for chunk in chunks]
 
-        transfers[0].first = Logic(1)
-        transfers[-1].last = Logic(1)
+        transfers[0].first = 1
+        transfers[-1].last = 1
         transfers[-1].keep = LogicArray.from_unsigned(last_keep, self.width // 8)
 
         return transfers
@@ -72,7 +72,7 @@ class AxisPacketTransfer(TransferRecord):
         return result
 
     def is_last(self) -> bool:
-        return self.last == Logic(1)
+        return self.last == 1
 
 class AxisPacketSourceBfm(Driver):
     def __init__(self, dut: HierarchyObject, name: str, clock: object):
@@ -82,7 +82,7 @@ class AxisPacketSourceBfm(Driver):
         self.clock = clock
 
         self._map_signals()
-        self._bus_width = len(self._signals['data'].range)
+        self._bus_width = len(self._signals['data'])
         self._record_type = AxisPacketTransfer(width=self._bus_width)
         
         self.start()
@@ -115,7 +115,6 @@ class AxisPacketSourceBfm(Driver):
         signal = self._signals['data']
         num_signal_bytes = len(signal) // 8
         num_transfer_bytes = len(transfer.data) // 8
-        
         value = transfer.data.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
         self._signals['data'].value = LogicArray.from_bytes(value, byteorder='little')
 
@@ -136,17 +135,17 @@ class AxisPacketSourceBfm(Driver):
         elif isinstance(self._signals['meta'], LogicArrayObject) and isinstance(meta, bytes | bytearray):
             new_meta = int.from_bytes(meta, byteorder='little')
             self._signals['meta'].value = LogicArray.from_unsigned(new_meta, len(self._signals['meta'].value)) 
-            self._signals['meta_valid'].value = Logic(1)
+            self._signals['meta_valid'].value = 1
         elif meta is None:
-            self._signals['meta_valid'].value = Logic(0)
+            self._signals['meta_valid'].value = 0
         else:
             raise ValueError("Illegal meta value")
 
         await RisingEdge(self.clock)
-        while self._signals['ready'].value != Logic(1):
+        while self._signals['ready'].value != 1:
             await RisingEdge(self.clock)
         
-        self._signals['valid'].value = Logic(0)
+        self._signals['valid'].value = 0
 
     async def send_transfer(self, transfer: AxisPacketTransfer):
         await self._queue.put(transfer)
@@ -166,7 +165,7 @@ class AxisPacketSinkBfm(Monitor):
         self.clock = clock
 
         self._map_signals()
-        self._bus_width = len(self._signals['data'].range)
+        self._bus_width = len(self._signals['data'])
         self._record_type = AxisPacketTransfer(width=self._bus_width)
 
         self.start()
@@ -196,12 +195,11 @@ class AxisPacketSinkBfm(Monitor):
         self._signals['meta'] = self.dut._get(meta_name)
 
     async def transfer(self) -> AxisPacketTransfer:
-        self._signals['ready'].value = Logic(1)
+        self._signals['ready'].value = 1
 
         await RisingEdge(self.clock)
-        while self._signals['valid'].value != Logic(1):
+        while self._signals['valid'].value != 1:
             await RisingEdge(self.clock)
-
 
         transfer = AxisPacketTransfer(width=self._bus_width)
         transfer.data = self._signals['data'].value 
@@ -218,7 +216,7 @@ class AxisPacketSinkBfm(Monitor):
         elif isinstance(self._signals['meta'], LogicArrayObject):
             if self._signals['meta'].value.is_resolvable:
                 meta = self._signals['meta'].value.to_bytes(byteorder='little')
-                transfer.meta_valid = Logic(1)
+                transfer.meta_valid = 1
         elif self._signals['meta'] is None:
             pass
         else:
@@ -226,7 +224,7 @@ class AxisPacketSinkBfm(Monitor):
         
         transfer.meta = meta
 
-        self._signals['ready'].value = Logic(0)
+        self._signals['ready'].value = 0
 
         return transfer
 

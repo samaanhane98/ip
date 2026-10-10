@@ -3,7 +3,8 @@ from typing import Self
 
 import cocotb
 from cocotb.triggers import RisingEdge
-from cocotb.queue import Queue
+from cocotb.types import LogicArray, Logic, Range
+from cocotb.handle import HierarchyObject, LogicArrayObject
 
 from driver import Driver
 from monitor import Monitor
@@ -11,40 +12,48 @@ from transfer import TransferRecord
 
 
 @dataclass
-class AxisBeat(TransferRecord):
-    tvalid : int = 0
-    tlast  : int = 0
-    tdata  : int = 0
-    tuser  : int = 0
-    tkeep  : int = 0
+class AxisTransfer(TransferRecord):
+    tvalid : Logic = 0
+    tlast  : Logic = 0
+    tdata  : LogicArray = 0
+    tuser  : LogicArray | None = 0
+    tkeep  : LogicArray = 0
 
-    _bus_width: int = 0
+    width: int = 0
 
     def from_bytes(self, data: bytearray) -> list[Self]:
-        chunk_size = self._bus_width // 8
+        chunk_size = self.width // 8
         chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
         remainder = len(data) % chunk_size
         full_keep = (1 << chunk_size) - 1
         last_keep = full_keep if remainder == 0 else (1 << remainder) - 1
 
-        beats = [AxisBeat(tvalid=1, tlast=0, tdata=chunk, tuser=0, tkeep=full_keep) for chunk in chunks]
 
-        beats[-1].tlast = 1
-        beats[-1].tkeep = last_keep
+        transfers = [
+            AxisTransfer(
+                tvalid=1, 
+                tlast=0, 
+                tdata=LogicArray.from_bytes(chunk, byteorder='little'), 
+                tuser=None, 
+                tkeep=LogicArray.from_unsigned(full_keep, self.width // 8), 
+            ) for chunk in chunks]
 
-        return beats
 
-    def to_bytes(self, beats: list[Self]) -> bytearray:
+        transfers[-1].tlast = 1
+        transfers[-1].tkeep = LogicArray.from_unsigned(last_keep, self.width // 8)
+
+        return transfers
+
+    def to_bytes(self, transfers: list[Self]) -> bytearray:
         result = bytearray()
 
-        for beat in beats:
-            tdata = beat.tdata
-            tkeep = beat.tkeep
+        for transfer in transfers:
+            tdata = transfer.tdata
+            tkeep = transfer.tkeep
 
             bytes_list = [tdata[i : i - 7] for i in range(tdata.range.left, tdata.range.right, -8)]
             bytes_list = list(reversed(bytes_list))
-
 
             keep_bits = [bit for bit in tkeep]
             keep_bits = list(reversed(keep_bits))
@@ -56,7 +65,7 @@ class AxisBeat(TransferRecord):
 
         return result
     
-    def last(self) -> bool:
+    def is_last(self) -> bool:
         return self.tlast == 1
         
 
@@ -69,8 +78,8 @@ class AxisSourceBfm(Driver):
         self.clock = clock
 
         self._map_signals()
-        self._bus_width = len(self._signals['tdata'].range)
-        self._record_type = AxisBeat(_bus_width=self._bus_width)
+        self._bus_width = len(self._signals['tdata'])
+        self._record_type = AxisTransfer(width=self._bus_width)
         
         self.start()
 
@@ -92,11 +101,20 @@ class AxisSourceBfm(Driver):
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
 
-    async def send_transfer(self, beat: AxisBeat):
-        self._signals['tdata'].value = int.from_bytes(beat.tdata, byteorder='little')
-        self._signals['tkeep'].value = beat.tkeep
-        self._signals['tlast'].value = beat.tlast
-        self._signals['tuser'].value = beat.tuser
+    async def transfer(self, transfer: AxisTransfer):
+        signal = self._signals['tdata']
+        num_signal_bytes = len(signal) // 8
+        num_transfer_bytes = len(transfer.tdata) // 8
+
+        value = transfer.tdata.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
+        self._signals['tdata'].value = LogicArray.from_bytes(value, byteorder='little')
+
+        self._signals['tkeep'].value = transfer.tkeep
+        self._signals['tlast'].value = transfer.tlast
+
+        if transfer.tuser is not None:
+            self._signals['tuser'].value = transfer.tuser
+
         self._signals['tvalid'].value = 1
 
         await RisingEdge(self.clock)
@@ -105,11 +123,14 @@ class AxisSourceBfm(Driver):
 
         self._signals['tvalid'].value = 0
 
+    async def send_transfer(self, transfer: AxisTransfer):
+        await self._queue.put(transfer)
+        return
+
     async def send(self, data: bytearray):
-        beats = AxisBeat(bus_width=self._bus_width).from_bytes(data)
-        
-        for beat in beats:
-            await self._queue.put(beat)
+        transfers = AxisTransfer(width=self._bus_width).from_bytes(data)
+        for transfer in transfers:
+            await self.transfer(transfer)
 
 class AxisSinkBfm(Monitor):
     def __init__(self, dut: object, name: str, clock: object):
@@ -120,7 +141,7 @@ class AxisSinkBfm(Monitor):
 
         self._map_signals()
         self._bus_width = len(self._signals['tdata'].range)
-        self._record_type = AxisBeat(_bus_width=self._bus_width)
+        self._record_type = AxisTransfer(width=self._bus_width)
 
         self.start()
 
@@ -142,31 +163,37 @@ class AxisSinkBfm(Monitor):
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
 
-    async def receive_transfer(self) -> AxisBeat:
+    async def transfer(self) -> AxisTransfer:
         self._signals['ready'].value = 1
 
         await RisingEdge(self.clock)
         while self._signals['tvalid'].value != 1:
             await RisingEdge(self.clock)
 
+        transfer = AxisTransfer()
+        transfer.tvalid = self._signals['tvalid'].value
+        transfer.tlast = self._signals['tlast'].value
+        transfer.tdata = self._signals['tdata'].value
+        transfer.tuser = self._signals['tuser'].value
+        transfer.tkeep = self._signals['tkeep'].value
+
         self._signals['ready'].value = 0
 
-        return AxisBeat(
-            tvalid=self._signals['tvalid'].value,
-            tlast=self._signals['tlast'].value,
-            tdata=self._signals['tdata'].value,
-            tuser=self._signals['tuser'].value,
-            tkeep=self._signals['tkeep'].value,
-        )
+        return transfer
+
+    async def receive_transfer(self) -> AxisTransfer:
+        transfer = await self._queue.get()
+        return transfer
+        
 
     async def receive(self) -> bytearray:
         transfers = []
 
         while True:
-            transfer = await self._queue.get()
+            transfer = await self.receive_transfer()
             transfers.append(transfer)
 
-            if transfer.last():
+            if transfer.is_last():
                 break
 
         data = self._record_type.to_bytes(transfers)

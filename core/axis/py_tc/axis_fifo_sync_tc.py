@@ -7,7 +7,7 @@ from cocotb.handle import Freeze, Release
 
 from test_harness import TestHarness, test
 
-from axis_bfm import AxisSourceBfm, AxisSinkBfm, AxisBeat
+from axis_bfm import AxisSourceBfm, AxisSinkBfm, AxisTransfer
 
 
 class TestCase(TestHarness):
@@ -36,8 +36,7 @@ class TestCase(TestHarness):
         amount = 0xf
         for index in range(amount):
             data = bytes([index])
-            beat = AxisBeat(1, 1, data, 0, 1)
-            await self.source.send_transfer(beat)
+            await self.source.send(data)
 
         await ClockCycles(self.dut.clk, 1)
 

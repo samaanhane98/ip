@@ -21,6 +21,8 @@ package axis_pkg is
     function unpack(vec : std_logic_vector; axis : t_axis) return t_axis;
 
     function get_size(axis : t_axis) return natural;
+
+    type t_axis_array is array(natural range<>) of t_axis;
 end package;
 
 package body axis_pkg is

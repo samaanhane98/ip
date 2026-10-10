@@ -1,5 +1,9 @@
-vcd file waveform.vcd
-vcd add -r /*
+#vcd file waveform.vcd
+#vcd add -r /*
+#run -all
+#vcd flush
+#quit -f
+
+log -r /*
 run -all
-vcd flush
 quit -f

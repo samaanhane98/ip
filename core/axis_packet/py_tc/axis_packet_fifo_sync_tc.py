@@ -51,8 +51,9 @@ class TestCase(TestHarness):
     async def test_002_read_test(self):
         amount = 0x10
 
+        depth = self.dut.g_depth.value
         for i in range(amount):
-            data_length = random.randint(1, 255)
+            data_length = random.randint(1, depth)
             data = random.randbytes(data_length)
             meta = bytes([i])
 
