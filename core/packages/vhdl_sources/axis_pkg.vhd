@@ -17,12 +17,17 @@ package axis_pkg is
     subtype t_axis_8_u8 is t_axis(tdata(7 downto 0), tkeep(0 downto 0), tuser(7 downto 0));
     subtype t_axis_32_u8 is t_axis(tdata(31 downto 0), tkeep(3 downto 0), tuser(7 downto 0));
 
+    type t_axis_array is array(natural range<>) of t_axis;
+
+    subtype t_axis_8_array is t_axis_array(open)(tdata(7 downto 0), tkeep(0 downto 0), tuser(- 1 downto 0));
+    subtype t_axis_32_array is t_axis_array(open)(tdata(31 downto 0), tkeep(3 downto 0), tuser(- 1 downto 0));
+
     function pack(axis : t_axis) return std_logic_vector;
     function unpack(vec : std_logic_vector; axis : t_axis) return t_axis;
-
     function get_size(axis : t_axis) return natural;
 
-    type t_axis_array is array(natural range<>) of t_axis;
+    function axis_init(t: t_axis) return t_axis;
+
 end package;
 
 package body axis_pkg is
@@ -63,5 +68,17 @@ package body axis_pkg is
     function get_size(axis : t_axis) return natural is
     begin
         return 1 + 1 + axis.tdata'length + axis.tuser'length + axis.tkeep'length;
+    end function;
+
+    function axis_init(t: t_axis) return t_axis is
+        variable v_rec: t'subtype;
+    begin
+        v_rec.tvalid := '0';
+        v_rec.tlast := '0';
+        v_rec.tdata(v_rec.tdata'range) := (others => '0');
+        v_rec.tuser(v_rec.tuser'range) := (others => '0');
+        v_rec.tkeep(v_rec.tkeep'range) := (others => '0');
+
+        return v_rec;
     end function;
 end package body;

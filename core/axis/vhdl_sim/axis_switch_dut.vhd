@@ -33,25 +33,33 @@ entity axis_switch_dut is
 end entity axis_switch_dut;
 
 architecture structure of axis_switch_dut is
+    signal streams_out : t_axis_32_array(3 downto 0);
+    signal readys_out  : std_logic_vector(3 downto 0);
 begin
     i_dut : entity work.axis_switch
         generic map(
             g_ports => g_ports
         )
         port map(
-            clk                 => clk,
-            reset               => reset,
-            select_output       => select_output,
-            stream_in           => stream_in,
-            stream_in_ready     => stream_in_ready,
-            stream_out(0)       => stream_out_0,
-            stream_out(1)       => stream_out_1,
-            stream_out(2)       => stream_out_2,
-            stream_out(3)       => stream_out_3,
-            stream_out_ready(0) => stream_out_0_ready,
-            stream_out_ready(1) => stream_out_1_ready,
-            stream_out_ready(2) => stream_out_2_ready,
-            stream_out_ready(3) => stream_out_3_ready
+            clk              => clk,
+            reset            => reset,
+            select_output    => select_output,
+            stream_in        => stream_in,
+            stream_in_ready  => stream_in_ready,
+            stream_out       => streams_out,
+            stream_out_ready => readys_out
         );
 
+    stream_out_0      <= streams_out(0);
+    readys_out(0)     <= stream_out_0_ready;
+
+    stream_out_1      <= streams_out(1);
+    readys_out(1)     <= stream_out_1_ready;
+
+    stream_out_2      <= streams_out(2);
+    readys_out(2)     <= stream_out_2_ready;
+
+    stream_out_3      <= streams_out(3);
+    readys_out(3)     <= stream_out_3_ready;
+    
 end architecture structure;

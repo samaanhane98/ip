@@ -1,6 +1,6 @@
 SIM=questa-compat
 WAVES=1
-#GUI=1
+GUI=1
 COMPILE_ARGS += -2008 +acc
 TOPLEVEL_LANG ?= vhdl
 
