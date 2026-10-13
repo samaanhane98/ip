@@ -32,21 +32,20 @@ class TestCase(TestHarness):
 
         self.dut.reset.value = 0
     
-    #@test
-    #async def test_001_write_test(self):
-    #    amount = 0xf
-
-    #    for index in range(amount):
-    #        destination = index % 4
-    #        data_length = random.randint(1, 255)
-    #        data = random.randbytes(data_length)
-    #        await self.sources[destination].send(data)
-    #        recv = await self.sink.receive()
-    #        assert recv.hex() == data.hex()
-
-    # TODO: properly test algorithm
     @test
-    async def test_002_write_test(self):
+    async def test_001_write_test(self):
+        amount = 0xf
+
+        for index in range(amount):
+            destination = index % 4
+            data_length = random.randint(1, 255)
+            data = random.randbytes(data_length)
+            await self.sources[destination].send(data)
+            recv = await self.sink.receive()
+            assert recv.hex() == data.hex()
+
+    @test
+    async def test_002_consecutive_write_test(self):
         amount = 0x10
         
         for index in range(amount):

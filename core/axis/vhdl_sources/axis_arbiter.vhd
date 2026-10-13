@@ -9,7 +9,7 @@ use work.array_pkg.all;
 entity axis_arbiter is
     generic (
         g_ports  : natural := 2;
-        g_method : string  := "round_robin" -- "0: round_robin", "1: fixed"
+        g_method : string  := "round_robin" -- round_robin, fixed
     );
     port (
         clk              : in std_logic;

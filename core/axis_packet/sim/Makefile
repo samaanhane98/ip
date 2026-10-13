@@ -1,6 +1,6 @@
 SIM=questa-compat
 WAVES=1
-GUI=1
+#GUI=1
 COMPILE_ARGS += -2008 +acc
 TOPLEVEL_LANG ?= vhdl
 
@@ -27,11 +27,14 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis_packet/vhdl_sources/*.vhd)
 
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis_packet/vhdl_sim/*.vhd)
 
-COCOTB_TOPLEVEL = axis_packet_fifo_sync_dut
-COCOTB_TEST_MODULES = axis_packet_fifo_sync_tc
+#COCOTB_TOPLEVEL = axis_packet_fifo_sync_dut
+#COCOTB_TEST_MODULES = axis_packet_fifo_sync_tc
 
 #COCOTB_TOPLEVEL = axis_packet_switch_dut
 #COCOTB_TEST_MODULES = axis_packet_switch_tc
+
+COCOTB_TOPLEVEL = axis_packet_arbiter_dut
+COCOTB_TEST_MODULES = axis_packet_arbiter_tc
 
 export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/py_tc)
 
