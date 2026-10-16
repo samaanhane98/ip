@@ -34,8 +34,14 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis/vhdl_sim/*.vhd)
 #COCOTB_TOPLEVEL = axis_switch_dut
 #COCOTB_TEST_MODULES = axis_switch_tc
 
-COCOTB_TOPLEVEL = axis_arbiter_dut
-COCOTB_TEST_MODULES = axis_arbiter_tc
+#COCOTB_TOPLEVEL = axis_arbiter_dut
+#COCOTB_TEST_MODULES = axis_arbiter_tc
+
+#COCOTB_TOPLEVEL = axis_input_latch_dut
+#COCOTB_TEST_MODULES = axis_input_latch_tc
+
+COCOTB_TOPLEVEL = axis_width_converter_dut
+COCOTB_TEST_MODULES = axis_width_converter_tc
 
 export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/py_tc)
 

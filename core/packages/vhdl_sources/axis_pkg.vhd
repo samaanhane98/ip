@@ -13,9 +13,13 @@ package axis_pkg is
 
     subtype t_axis_8 is t_axis(tdata(7 downto 0), tkeep(0 downto 0), tuser(- 1 downto 0));
     subtype t_axis_32 is t_axis(tdata(31 downto 0), tkeep(3 downto 0), tuser(- 1 downto 0));
+    subtype t_axis_64 is t_axis(tdata(63 downto 0), tkeep(7 downto 0), tuser(- 1 downto 0));
+    subtype t_axis_128 is t_axis(tdata(127 downto 0), tkeep(15 downto 0), tuser(- 1 downto 0));
 
     subtype t_axis_8_u8 is t_axis(tdata(7 downto 0), tkeep(0 downto 0), tuser(7 downto 0));
     subtype t_axis_32_u8 is t_axis(tdata(31 downto 0), tkeep(3 downto 0), tuser(7 downto 0));
+    subtype t_axis_64_u8 is t_axis(tdata(63 downto 0), tkeep(7 downto 0), tuser(7 downto 0));
+    subtype t_axis_128_u8 is t_axis(tdata(127 downto 0), tkeep(15 downto 0), tuser(7 downto 0));
 
     type t_axis_array is array(natural range<>) of t_axis;
 

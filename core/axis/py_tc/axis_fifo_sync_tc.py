@@ -20,6 +20,9 @@ class TestCase(TestHarness):
         self.source = AxisSourceBfm(self.dut.i_dut, "stream_in", self.dut.clk)
         self.sink = AxisSinkBfm(self.dut.i_dut, "stream_out", self.dut.clk)
 
+        self.source.throttle(1, 5)
+        self.sink.throttle(3, 2)
+
     async def reset_tc(self, cycles = 10):
         self.dut.reset.value = 1
 

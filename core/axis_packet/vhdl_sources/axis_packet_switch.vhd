@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 use work.math_pkg.all;
 use work.axis_packet_pkg.all;
 use work.axis_pkg.all;
-use work.array_pkg.all;
+use work.vec_pkg.all;
 
 entity axis_packet_switch is
     generic (

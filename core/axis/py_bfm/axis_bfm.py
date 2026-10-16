@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Self
 
 import cocotb
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import RisingEdge, ClockCycles
 from cocotb.types import LogicArray, Logic, Range
 from cocotb.handle import HierarchyObject, LogicArrayObject
 
@@ -101,31 +101,50 @@ class AxisSourceBfm(Driver):
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
 
+    def throttle(self, low, high):
+        if (low < 0 or high == 0):
+            raise ValueError("Invalid throttle value")
+
+        self.valid_list = [1] * high + [0] * low
+        self.valid_pointer = 0
+
+    def is_valid(self) -> bool:
+        if self.valid_pointer > len(self.valid_list) - 1:
+            raise ValueError("Invalid valid pointer value")
+
+        valid = self.valid_list[self.valid_pointer]
+        self.valid_pointer = (self.valid_pointer + 1) % len(self.valid_list)
+        return bool(valid)
+
     async def transfer(self, transfer: AxisTransfer):
-        signal = self._signals['tdata']
-        num_signal_bytes = len(signal) // 8
-        num_transfer_bytes = len(transfer.tdata) // 8
+        while True:
+            if not self.is_valid():
+                await ClockCycles(self.clock, 1)
+            else:
+                signal = self._signals['tdata']
+                num_signal_bytes = len(signal) // 8
+                num_transfer_bytes = len(transfer.tdata) // 8
 
-        value = transfer.tdata.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
-        self._signals['tdata'].value = LogicArray.from_bytes(value, byteorder='little')
+                value = transfer.tdata.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
+                self._signals['tdata'].value = LogicArray.from_bytes(value, byteorder='little')
 
-        self._signals['tkeep'].value = transfer.tkeep
-        self._signals['tlast'].value = transfer.tlast
+                self._signals['tkeep'].value = transfer.tkeep
+                self._signals['tlast'].value = transfer.tlast
 
-        if transfer.tuser is not None:
-            self._signals['tuser'].value = transfer.tuser
+                if transfer.tuser is not None:
+                    self._signals['tuser'].value = transfer.tuser
 
-        self._signals['tvalid'].value = 1
+                self._signals['tvalid'].value = 1
 
-        await RisingEdge(self.clock)
-        while self._signals['ready'].value != 1:
-            await RisingEdge(self.clock)
+                await RisingEdge(self.clock)
+                while self._signals['ready'].value != 1:
+                    await RisingEdge(self.clock)
 
-        self._signals['tvalid'].value = 0
+                self._signals['tvalid'].value = 0
+                return
 
     async def send_transfer(self, transfer: AxisTransfer):
         await self._queue.put(transfer)
-        return
 
     async def send(self, data: bytearray):
         transfers = AxisTransfer(width=self._bus_width).from_bytes(data)
@@ -163,23 +182,44 @@ class AxisSinkBfm(Monitor):
         self._signals['tuser'] = bus.tuser
         self._signals['tkeep'] = bus.tkeep
 
+    def throttle(self, low=0, high=1):
+        if (low < 0 or high == 0):
+            raise ValueError("Invalid throttle value")
+
+        self.ready_list = [1] * high + [0] * low
+        self.ready_pointer = 0
+
+    def is_ready(self) -> bool: 
+        if self.ready_pointer > len(self.ready_list) - 1:
+            raise ValueError("Invalid ready pointer value")
+
+        ready = self.ready_list[self.ready_pointer]
+        self.ready_pointer = (self.ready_pointer + 1) % len(self.ready_list)
+        return bool(ready)
+
     async def transfer(self) -> AxisTransfer:
-        self._signals['ready'].value = 1
+        transfered = False
 
-        await RisingEdge(self.clock)
-        while self._signals['tvalid'].value != 1:
-            await RisingEdge(self.clock)
+        while not transfered:
+            if not self.is_ready():
+                await ClockCycles(self.clock, 1)
+            else:
+                self._signals['ready'].value = 1
 
-        transfer = AxisTransfer()
-        transfer.tvalid = self._signals['tvalid'].value
-        transfer.tlast = self._signals['tlast'].value
-        transfer.tdata = self._signals['tdata'].value
-        transfer.tuser = self._signals['tuser'].value
-        transfer.tkeep = self._signals['tkeep'].value
+                await RisingEdge(self.clock)
+                while self._signals['tvalid'].value != 1:
+                    await RisingEdge(self.clock)
 
-        self._signals['ready'].value = 0
+                transfer = AxisTransfer()
+                transfer.tvalid = self._signals['tvalid'].value
+                transfer.tlast = self._signals['tlast'].value
+                transfer.tdata = self._signals['tdata'].value
+                transfer.tuser = self._signals['tuser'].value
+                transfer.tkeep = self._signals['tkeep'].value
 
-        return transfer
+                self._signals['ready'].value = 0
+
+                return transfer
 
     async def receive_transfer(self) -> AxisTransfer:
         transfer = await self._queue.get()

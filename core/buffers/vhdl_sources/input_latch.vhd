@@ -39,7 +39,7 @@ begin
             end if;
 
             if reset = '1' then
-                reg_in_valid <= '1';
+                reg_in_valid <= '0';
                 reg_in_data  <= (others => '0');
             end if;
         end if;

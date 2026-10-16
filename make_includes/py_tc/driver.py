@@ -17,6 +17,10 @@ class Driver(ABC, Generic[T]):
         self._coro: cocotb.Task | None = None
         self._signals: Dict[str, object] = {}
 
+        # Variables to handle throttling
+        self.valid_list = [1] 
+        self.valid_pointer = 0
+
     def start(self) -> None:
         if self._coro is not None:
             raise RuntimeError("Driver already started")
@@ -35,6 +39,14 @@ class Driver(ABC, Generic[T]):
 
     @abstractmethod
     def _map_signals(self) -> None: ...
+
+    @abstractmethod
+    def throttle(self, low, high):
+        return
+
+    @abstractmethod
+    def is_valid(self) -> bool:
+        return True
 
     @abstractmethod
     async def transfer(self, transfer: T) -> None: ...

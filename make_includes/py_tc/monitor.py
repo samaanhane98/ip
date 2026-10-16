@@ -17,6 +17,10 @@ class Monitor(ABC, Generic[T]):
         self._coro: cocotb.Task | None = None
         self._signals: Dict[str, object] = {}
 
+        # Variables to handle throttling
+        self.ready_list = [1] 
+        self.ready_pointer = 0
+
     def start(self) -> None:
         if self._coro is not None:
             raise RuntimeError("Sink already started")
@@ -35,6 +39,14 @@ class Monitor(ABC, Generic[T]):
 
     @abstractmethod
     def _map_signals(self) -> None: ...
+
+    @abstractmethod
+    def throttle(self, low, high):
+        return
+
+    @abstractmethod
+    def is_ready(self) -> bool:
+        return True
 
     @abstractmethod
     def transfer(self) -> T: ...
