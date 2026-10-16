@@ -28,8 +28,10 @@ architecture behavior of axis_large_to_small_width is
 
     type t_state is (Idle, Data);
     signal state          : t_state;
-    signal count          : natural;
-    signal byte_count     : natural;
+
+    -- For hardware reasons
+    signal count          : natural range 0 to 255;
+    signal byte_count     : natural range 0 to 255;
 
     -- Latch signals
     signal stream_latched : stream_in'subtype;
@@ -72,8 +74,8 @@ begin
 
                         if byte_count + c_output_bytes < keep_to_bytes(stream_latched.tkeep) then
                             stream_out.tlast <= '0';
-                            byte_count       <= c_output_bytes;
-                            count            <= 1;
+                            count             <= count + 1;
+                            byte_count        <= byte_count + c_output_bytes;
                             state            <= data;
                         else
                             stream_out.tlast <= '1'; -- When unaligned, always the last beat
@@ -168,7 +170,10 @@ architecture behavior of axis_small_to_large_width is
 
     -- Input signals
     signal input_buffer        : t_stream_array(c_num_beats - 2 downto 0); -- need one less
-    signal count               : integer;
+
+    -- For hardware reasons
+    signal count               : natural range 0 to 255;
+
     signal output_buffer_valid : std_logic;
     signal output_buffer       : t_stream_array(c_num_beats - 1 downto 0);
 

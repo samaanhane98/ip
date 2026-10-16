@@ -17,8 +17,8 @@ class TestCase(TestHarness):
 	
         cocotb.start_soon(Clock(self.dut.clk, 10, unit="ns").start())
 
-        self.source = AxisSourceBfm(self.dut.i_dut, "stream_in", self.dut.clk)
-        self.sink = AxisSinkBfm(self.dut.i_dut, "stream_out", self.dut.clk)
+        self.source = AxisSourceBfm(self.dut, "stream_in", self.dut.clk)
+        self.sink = AxisSinkBfm(self.dut, "stream_out", self.dut.clk)
 
         #self.source.throttle(1, 5)
         #self.sink.throttle(3, 2)
