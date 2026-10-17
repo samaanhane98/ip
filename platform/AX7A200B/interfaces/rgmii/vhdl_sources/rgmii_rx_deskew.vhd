@@ -1,0 +1,102 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+library unisim;
+use unisim.vcomponents.all;
+
+entity rgmii_rx_deskew is
+    generic (
+        g_idelay_value     : positive := 20;
+        g_refclk_frequency : real     := 200.0;
+        g_iodelay_group    : string   := "rgmii_idelay_group"
+    );
+    port (
+        idelay_ref_clk   : in std_logic;
+        idelay_ref_reset : in std_logic;
+
+        rxc              : in std_logic;
+        rd               : in std_logic_vector(3 downto 0);
+        rx_ctl           : in std_logic;
+
+        rd_deskew        : out std_logic_vector(3 downto 0);
+        rx_ctl_deskew    : out std_logic
+    );
+end entity;
+
+architecture structure of rgmii_rx_deskew is
+
+begin
+    gen_idelayctrl                             : block
+        attribute IODELAY_GROUP                    : string;
+        attribute IODELAY_GROUP of IDELAYCTRL_inst : label is g_iodelay_group;
+    begin
+        IDELAYCTRL_inst : IDELAYCTRL
+        port map(
+            RDY    => open,
+            REFCLK => idelay_ref_clk,
+            RST    => idelay_ref_reset
+        );
+    end block;
+
+    gen_rd_delay : for i in 0 to 3 generate
+        attribute IODELAY_GROUP                  : string;
+        attribute IODELAY_GROUP of IDELAYE2_inst : label is g_iodelay_group;
+    begin
+        IDELAYE2_inst : IDELAYE2
+        generic map(
+            CINVCTRL_SEL          => "FALSE",
+            DELAY_SRC             => "IDATAIN",
+            HIGH_PERFORMANCE_MODE => "FALSE",
+            IDELAY_TYPE           => "FIXED",
+            IDELAY_VALUE          => g_idelay_value,
+            PIPE_SEL              => "FALSE",
+            REFCLK_FREQUENCY      => g_refclk_frequency,
+            SIGNAL_PATTERN        => "DATA"
+        )
+        port map(
+            CNTVALUEOUT => open,
+            DATAOUT     => rd_deskew(i),
+            C           => rxc,
+            CE          => '0',
+            CINVCTRL    => '0',
+            CNTVALUEIN => (others => '0'),
+            DATAIN      => '0',
+            IDATAIN     => rd(i),
+            INC         => '0',
+            LD          => '0',
+            LDPIPEEN    => '0',
+            REGRST      => '0'
+        );
+    end generate;
+
+    ctl_delay                                     : block is
+        attribute IODELAY_GROUP                       : string;
+        attribute IODELAY_GROUP of IDELAYE2_ctrl_inst : label is g_iodelay_group;
+    begin
+        IDELAYE2_ctrl_inst : IDELAYE2
+        generic map(
+            CINVCTRL_SEL          => "FALSE",
+            DELAY_SRC             => "IDATAIN",
+            HIGH_PERFORMANCE_MODE => "FALSE",
+            IDELAY_TYPE           => "FIXED",
+            IDELAY_VALUE          => g_idelay_value,
+            PIPE_SEL              => "FALSE",
+            REFCLK_FREQUENCY      => g_refclk_frequency,
+            SIGNAL_PATTERN        => "DATA"
+        )
+        port map(
+            CNTVALUEOUT => open,
+            DATAOUT     => rx_ctl_deskew,
+            C           => rxc,
+            CE          => '0',
+            CINVCTRL    => '0',
+            CNTVALUEIN => (others => '0'),
+            DATAIN      => '0',
+            IDATAIN     => rx_ctl,
+            INC         => '0',
+            LD          => '0',
+            LDPIPEEN    => '0',
+            REGRST      => '0'
+        );
+    end block;
+end architecture;

@@ -2,8 +2,8 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-library unisim;
-    use unisim.vcomponents.all;
+library UNISIM;
+    use UNISIM.vcomponents.all;
 
 entity rgmii_to_data is
     port (
@@ -72,7 +72,6 @@ begin
 
     i_cdc_fifo: entity work.fifo_async
         generic map (
-            g_width        => 10,
             g_depth        => 16,
             g_optimization => "SPEED"
         )
