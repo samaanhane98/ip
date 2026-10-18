@@ -1,12 +1,18 @@
 SIM=questa-compat
 WAVES=1
-#GUI=1
+GUI=1
 COMPILE_ARGS += -2008 +acc
 TOPLEVEL_LANG ?= vhdl
 
 IP_ROOT = ../../..
 
 VHDL_SOURCES =
+
+# Packages
+VHDL_SOURCES += $(abspath $(IP_ROOT)/core/packages/vhdl_sources/*.vhd)
+
+# make_includes
+VHDL_SOURCES += $(abspath $(IP_ROOT)/make_includes/vhdl_sim/*.vhd)
 
 # Open-logic
 VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/olo_base_pkg_array.vhd)
@@ -20,9 +26,9 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/olo_base_c
 VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/olo_base_fifo_async.vhd)
 VHDL_SOURCES += $(abspath $(IP_ROOT)/modules/open-logic/src/base/vhdl/olo_base_fifo_sync.vhd)
 
-VHDL_SOURCES += $(abspath $(IP_ROOT)/core/packages/vhdl_sources/*.vhd)
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/buffers/vhdl_sources/*.vhd)
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/buffers/vhdl_sim/*.vhd)
+
 
 #COCOTB_TOPLEVEL = fifo_sync_dut
 #COCOTB_TEST_MODULES = fifo_sync_tc
@@ -30,9 +36,11 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/core/buffers/vhdl_sim/*.vhd)
 #COCOTB_TOPLEVEL += fifo_async_dut
 #COCOTB_TEST_MODULES += fifo_async_tc
 
-COCOTB_TOPLEVEL = input_latch_dut
-COCOTB_TEST_MODULES = input_latch_tc
+#COCOTB_TOPLEVEL = input_latch_dut
+#COCOTB_TEST_MODULES = input_latch_tc
 
+COCOTB_TOPLEVEL = elastic_buffer_dut
+COCOTB_TEST_MODULES = elastic_buffer_tc
 
 export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/py_tc)
 

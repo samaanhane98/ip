@@ -9,6 +9,8 @@ package vec_pkg is
     subtype t_vec_array_32 is t_vec_array(open)(31 downto 0);
 
     type t_unsigned_array is array(natural range<>) of unsigned;
+    type t_natural_array is array(natural range<>) of natural;
+    type t_real_array is array(natural range<>) of real;
 
     --function slice(vec: std_logic_vector; high: natural; low: natural) return std_logic_vector;
 end package vec_pkg;
