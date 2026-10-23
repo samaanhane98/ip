@@ -1,37 +1,39 @@
-# Find index in list
-_idx  = $(if $2,$(if $(filter $1,$(firstword $2)),$(words $3),$(call _idx,$1,$(wordlist 2,$(words $2),$2),$3 x)))
-pos = $(call _idx,$1,$2,x)
-
 # Makefile
 THIS := $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(T),)
 
 # Export Makefile variables they are usable in the sub-process calls
-export MODULE
-export MODULE_TOP
-export MODULE_TEST
 export VHDL_SOURCES
 export PYTHONPATH
 
-.PHONY: all clean $(MODULE)
+.PHONY: all clean $(MODULES)
 
-all: $(MODULE)
+all: $(MODULES)
 
-# TODO: supress log here?
-$(MODULE):
-	$(MAKE) -f $(THIS) T=$@
+$(MODULES):
+	$(MAKE) -f $(THIS) T=$@ DUT=$($@_DUT) TEST=$($@_TEST)
 
 %.sim:
-	$(MAKE) -f $(THIS) T=$*
+	$(MAKE) -f $(THIS) T=$* DUT=$($*_DUT) TEST=$($*_TEST)
 
 %.gui:
-	$(MAKE) -f $(THIS) GUI=1 T=$*
+	$(MAKE) -f $(THIS) GUI=1 T=$* DUT=$($*_DUT) TEST=$($*_TEST)
 
-clean:
+clean::
 	rm -rf work results*.xml __pycache__ *.wlf transcript modelsim.ini
 
+help::
+	@echo "make: Run all testcases"
+	@echo "make [module]: Run [module] testcase without logging (TODO)"
+	@echo "make [module].sim: Run [module] testcase with logging"
+	@echo "make [module].gui: Run [module] testcase with Questa GUI"
+	@echo "make clean: Clean sim directory"
+	@echo "make help: Print this message"
+
 else
+
+$(info test: $(DUT))
 
 SIM=questa-compat
 WAVES=0
@@ -40,10 +42,8 @@ TOPLEVEL_LANG ?= vhdl
 
 SIM_BUILD = work/work_$(T)
 
-INDEX := $(call pos,$(T),$(MODULE))
-
-COCOTB_TOPLEVEL     = $(word $(INDEX),$(MODULE_TOP))
-COCOTB_TEST_MODULES = $(word $(INDEX),$(MODULE_TEST))
+COCOTB_TOPLEVEL     = $(DUT)
+COCOTB_TEST_MODULES = $(TEST)
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 endif

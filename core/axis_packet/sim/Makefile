@@ -1,6 +1,4 @@
 SIM=questa-compat
-WAVES=1
-#GUI=1
 COMPILE_ARGS += -2008 +acc
 TOPLEVEL_LANG ?= vhdl
 
@@ -27,20 +25,23 @@ VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis_packet/vhdl_sources/*.vhd)
 
 VHDL_SOURCES += $(abspath $(IP_ROOT)/core/axis_packet/vhdl_sim/*.vhd)
 
-#COCOTB_TOPLEVEL = axis_packet_fifo_sync_dut
-#COCOTB_TEST_MODULES = axis_packet_fifo_sync_tc
-
-#COCOTB_TOPLEVEL = axis_packet_switch_dut
-#COCOTB_TEST_MODULES = axis_packet_switch_tc
-
-COCOTB_TOPLEVEL = axis_packet_arbiter_dut
-COCOTB_TEST_MODULES = axis_packet_arbiter_tc
-
 export PYTHONPATH=$(abspath ../py_tc):$(abspath ../py_bfm):$(abspath $(IP_ROOT)/make_includes/py_tc)
 
-# include cocotb's make rules to take care of the simulator setup
-include $(shell cocotb-config --makefiles)/Makefile.sim
+MODULES :=
 
-.PHONY: view
-view:
-	vsim -view vsim.wlf
+MODULE			:= axis_packet_fifo_sync_tc
+MODULES 		+= $(MODULE)
+$(MODULE)_DUT 	= axis_packet_fifo_sync_dut
+$(MODULE)_TEST 	= axis_packet_fifo_sync_tc
+
+MODULE			:= axis_packet_switch_tc
+MODULES 		+= $(MODULE)
+$(MODULE)_DUT 	= axis_packet_switch_dut
+$(MODULE)_TEST 	= axis_packet_switch_tc
+
+MODULE			:= axis_packet_arbiter_tc
+MODULES 		+= $(MODULE)
+$(MODULE)_DUT 	= axis_packet_arbiter_dut
+$(MODULE)_TEST 	= axis_packet_arbiter_tc
+
+include $(abspath $(IP_ROOT)/make_includes/sim/Makefile)
