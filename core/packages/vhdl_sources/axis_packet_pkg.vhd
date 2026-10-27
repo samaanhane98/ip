@@ -14,6 +14,8 @@ package axis_packet_pkg is
         meta_valid : std_logic;
     end record;
 
+    subtype t_axis_packet_8 is t_axis_packet(data(7 downto 0), keep(0 downto 0), user(-1 downto 0));
+
     subtype t_axis_packet_32 is t_axis_packet(data(31 downto 0), keep(3 downto 0), user(-1 downto 0));
     subtype t_axis_packet_32_u8 is t_axis_packet(data(31 downto 0), keep(3 downto 0), user(7 downto 0));
 

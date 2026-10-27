@@ -1,50 +1,58 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ClockCycles, ReadOnly , NextTimeStep
+from cocotb.triggers import RisingEdge, ClockCycles
+
+from test_harness import TestHarness, test
 
 
-class RamSdp:
-	def __init__(self, dut):
-		self.dut = dut
+class TestCase(TestHarness):
+    def __init__(self, dut):
+        super().__init__(dut)
 
-	async def write(self, address, data):
-		self.dut.write_address.value = address
-		self.dut.write_data.value = data
-		self.dut.write_ena.value = 1
+        cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
-		await RisingEdge(self.dut.clk)
+        self.data_width = len(self.dut.wr_data)
 
-		self.dut.write_ena.value = 0
+    async def reset_tc(self, cycles = 10):
+        self.dut.reset.value = 1
 
-		return
+        await ClockCycles(self.dut.clk, cycles)
 
-	async def read(self, address):
-		self.dut.read_address.value = address
-		self.dut.read_ena.value = 1
+        self.dut.reset.value = 0
 
-		await RisingEdge(self.dut.clk)
-		self.dut.read_ena.value = 0
+    async def write(self, addr, val):
+        data = val
+        if isinstance(data, (bytes, bytearray)):
+            data = int.from_bytes(val, byteorder='little')
 
-		data = self.dut.read_data.value
-		return data
+        self.dut.wr_addr.value = addr
+        self.dut.wr_data.value = data
+        self.dut.wr_ena.value = 1
+        await RisingEdge(self.dut.clk)
+        self.dut.wr_ena.value = 0
+
+    async def read(self, addr):
+        self.dut.rd_addr.value = addr
+        self.dut.rd_ena.value = 1
+        await RisingEdge(self.dut.clk)
+        self.dut.rd_ena.value = 0
+        await ClockCycles(self.dut.clk, 2)
+        return self.dut.rd_data.value
+
+
+    @test
+    async def test_001_write_test(self):
+        amount = 0xf
+        for i in range(amount):
+            await self.write(i, i**2)
+
+        for i in range(amount):
+            val = await self.read(i)
+            assert val == i**2
+
 
 
 @cocotb.test()
-async def ram_sdp_test(dut):
-	ram = RamSdp(dut)
-
-	cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-
-	dut.reset.value = 1
-	await ClockCycles(dut.clk, 50)
-	dut.reset.value = 0
-    
-	for i in range(0xf):
-		await ram.write(i, i)
-
-	for i in range(0xf):
-		val = await ram.read(i)
-		assert i == val
-		await ClockCycles(dut.clk, 1)
-
-	await ClockCycles(dut.clk, 5)
+async def main(dut):
+    harness = TestCase(dut)
+    await harness.run_tests()

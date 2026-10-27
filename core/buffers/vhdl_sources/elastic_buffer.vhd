@@ -7,20 +7,19 @@ use work.math_pkg.all;
 entity elastic_buffer is
     generic (
         g_ram_style         : string    := "auto";
-        g_ram_behavior      : string    := "RBW";
-        g_ready_reset_state : std_logic := '1'
+        g_ram_behavior      : string    := "RBW"
     );
     port (
         -- Input interface
         wr_clk   : in std_logic;
         wr_reset : in std_logic;
-        wr_data  : in std_logic_vector(7 downto 0);
+        wr_data  : in std_logic_vector;
         wr_valid : in std_logic;
 
         -- Output Interface
         rd_clk   : in std_logic;
         rd_reset : in std_logic;
-        rd_data  : out std_logic_vector(7 downto 0);
+        rd_data  : out std_logic_vector;
         rd_valid : out std_logic
     );
 end entity;

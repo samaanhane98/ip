@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Self, Dict, Any, Tuple
 
 import cocotb
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import RisingEdge, ClockCycles
 from cocotb.types import LogicArray, Logic, Range
 from cocotb.handle import HierarchyObject, LogicArrayObject
 
@@ -111,41 +111,61 @@ class AxisPacketSourceBfm(Driver):
         meta_name = self.name + "_meta"
         self._signals['meta'] = self.dut._get(meta_name)
 
+    def throttle(self, low, high):
+        if (low < 0 or high == 0):
+            raise ValueError("Invalid throttle value")
+
+        self.valid_list = [1] * high + [0] * low
+        self.valid_pointer = 0
+
+    def is_valid(self) -> bool:
+        if self.valid_pointer > len(self.valid_list) - 1:
+            raise ValueError("Invalid valid pointer value")
+
+        valid = self.valid_list[self.valid_pointer]
+        self.valid_pointer = (self.valid_pointer + 1) % len(self.valid_list)
+        return bool(valid)
+
     async def transfer(self, transfer: AxisPacketTransfer):
-        signal = self._signals['data']
-        num_signal_bytes = len(signal) // 8
-        num_transfer_bytes = len(transfer.data) // 8
-        value = transfer.data.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
-        self._signals['data'].value = LogicArray.from_bytes(value, byteorder='little')
+        while True:
+            if not self.is_valid():
+                await ClockCycles(self.clock, 1)
+            else:
+                signal = self._signals['data']
+                num_signal_bytes = len(signal) // 8
+                num_transfer_bytes = len(transfer.data) // 8
+                value = transfer.data.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
+                self._signals['data'].value = LogicArray.from_bytes(value, byteorder='little')
 
-        self._signals['valid'].value = 1
-        self._signals['last'].value = transfer.last
-        self._signals['first'].value = transfer.first
-        self._signals['drop'].value = transfer.drop
-        self._signals['keep'].value = transfer.keep
+                self._signals['valid'].value = 1
+                self._signals['last'].value = transfer.last
+                self._signals['first'].value = transfer.first
+                self._signals['drop'].value = transfer.drop
+                self._signals['keep'].value = transfer.keep
 
 
-        meta = transfer.meta
-        
-        if transfer.user is not None:
-            self._signals['user'].value = transfer.user
-        
-        if isinstance(self._signals['meta'], HierarchyObject) and isinstance(meta, Dict[str, Any]):
-            raise ValueError("Dictionary meta values not yet implemented")
-        elif isinstance(self._signals['meta'], LogicArrayObject) and isinstance(meta, bytes | bytearray):
-            new_meta = int.from_bytes(meta, byteorder='little')
-            self._signals['meta'].value = LogicArray.from_unsigned(new_meta, len(self._signals['meta'].value)) 
-            self._signals['meta_valid'].value = 1
-        elif meta is None:
-            self._signals['meta_valid'].value = 0
-        else:
-            raise ValueError("Illegal meta value")
+                meta = transfer.meta
+                
+                if transfer.user is not None:
+                    self._signals['user'].value = transfer.user
+                
+                if isinstance(self._signals['meta'], HierarchyObject) and isinstance(meta, Dict[str, Any]):
+                    raise ValueError("Dictionary meta values not yet implemented")
+                elif isinstance(self._signals['meta'], LogicArrayObject) and isinstance(meta, bytes | bytearray):
+                    new_meta = int.from_bytes(meta, byteorder='little')
+                    self._signals['meta'].value = LogicArray.from_unsigned(new_meta, len(self._signals['meta'].value)) 
+                    self._signals['meta_valid'].value = 1
+                elif meta is None:
+                    self._signals['meta_valid'].value = 0
+                else:
+                    raise ValueError("Illegal meta value")
 
-        await RisingEdge(self.clock)
-        while self._signals['ready'].value != 1:
-            await RisingEdge(self.clock)
-        
-        self._signals['valid'].value = 0
+                await RisingEdge(self.clock)
+                while self._signals['ready'].value != 1:
+                    await RisingEdge(self.clock)
+                
+                self._signals['valid'].value = 0
+                return
 
     async def send_transfer(self, transfer: AxisPacketTransfer):
         await self._queue.put(transfer)
@@ -194,39 +214,58 @@ class AxisPacketSinkBfm(Monitor):
         meta_name = self.name + "_meta"
         self._signals['meta'] = self.dut._get(meta_name)
 
+    def throttle(self, low=0, high=1):
+        if (low < 0 or high == 0):
+            raise ValueError("Invalid throttle value")
+
+        self.ready_list = [1] * high + [0] * low
+        self.ready_pointer = 0
+
+    def is_ready(self) -> bool: 
+        if self.ready_pointer > len(self.ready_list) - 1:
+            raise ValueError("Invalid ready pointer value")
+
+        ready = self.ready_list[self.ready_pointer]
+        self.ready_pointer = (self.ready_pointer + 1) % len(self.ready_list)
+        return bool(ready)
+
     async def transfer(self) -> AxisPacketTransfer:
-        self._signals['ready'].value = 1
+        while True:
+            if not self.is_ready():
+                await ClockCycles(self.clock, 1)
+            else:
+                self._signals['ready'].value = 1
 
-        await RisingEdge(self.clock)
-        while self._signals['valid'].value != 1:
-            await RisingEdge(self.clock)
+                await RisingEdge(self.clock)
+                while self._signals['valid'].value != 1:
+                    await RisingEdge(self.clock)
 
-        transfer = AxisPacketTransfer(width=self._bus_width)
-        transfer.data = self._signals['data'].value 
-        transfer.last = self._signals['last'].value 
-        transfer.first = self._signals['first'].value 
-        transfer.drop = self._signals['drop'].value 
-        transfer.keep = self._signals['keep'].value 
-        transfer.valid = self._signals['valid'].value 
-        transfer.user = self._signals['user'].value 
+                transfer = AxisPacketTransfer(width=self._bus_width)
+                transfer.data = self._signals['data'].value 
+                transfer.last = self._signals['last'].value 
+                transfer.first = self._signals['first'].value 
+                transfer.drop = self._signals['drop'].value 
+                transfer.keep = self._signals['keep'].value 
+                transfer.valid = self._signals['valid'].value 
+                transfer.user = self._signals['user'].value 
 
-        meta = None
-        if isinstance(self._signals['meta'], HierarchyObject):
-            raise ValueError("Dictionary meta values not yet implemented")
-        elif isinstance(self._signals['meta'], LogicArrayObject):
-            if self._signals['meta'].value.is_resolvable:
-                meta = self._signals['meta'].value.to_bytes(byteorder='little')
-                transfer.meta_valid = 1
-        elif self._signals['meta'] is None:
-            pass
-        else:
-            raise ValueError("Illegal meta value")
-        
-        transfer.meta = meta
+                meta = None
+                if isinstance(self._signals['meta'], HierarchyObject):
+                    raise ValueError("Dictionary meta values not yet implemented")
+                elif isinstance(self._signals['meta'], LogicArrayObject):
+                    if self._signals['meta'].value.is_resolvable:
+                        meta = self._signals['meta'].value.to_bytes(byteorder='little')
+                        transfer.meta_valid = 1
+                elif self._signals['meta'] is None:
+                    pass
+                else:
+                    raise ValueError("Illegal meta value")
+                
+                transfer.meta = meta
 
-        self._signals['ready'].value = 0
+                self._signals['ready'].value = 0
 
-        return transfer
+                return transfer
 
     async def receive_transfer(self) -> AxisPacketTransfer: 
         transfer = await self._queue.get()

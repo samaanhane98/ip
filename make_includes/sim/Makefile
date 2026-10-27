@@ -7,9 +7,15 @@ ifeq ($(T),)
 export VHDL_SOURCES
 export PYTHONPATH
 
-.PHONY: all clean $(MODULES)
+# Find first module for the GUI command
+FIRST_MODULE := $(firstword $(MODULES))
+
+.PHONY: all clean gui $(MODULES)
 
 all: $(MODULES)
+
+gui:
+	$(MAKE) -f $(THIS) GUI=1 T=$(FIRST_MODULE) DUT=$($(FIRST_MODULE)_DUT) TEST=$($(FIRST_MODULE)_TEST)
 
 $(MODULES):
 	$(MAKE) -f $(THIS) T=$@ DUT=$($@_DUT) TEST=$($@_TEST)
@@ -32,8 +38,6 @@ help::
 	@echo "make help: Print this message"
 
 else
-
-$(info test: $(DUT))
 
 SIM=questa-compat
 WAVES=0

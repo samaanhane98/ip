@@ -198,9 +198,7 @@ class AxisSinkBfm(Monitor):
         return bool(ready)
 
     async def transfer(self) -> AxisTransfer:
-        transfered = False
-
-        while not transfered:
+        while True:
             if not self.is_ready():
                 await ClockCycles(self.clock, 1)
             else:
