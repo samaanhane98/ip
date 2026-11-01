@@ -22,7 +22,7 @@ entity ram_sdp is
         wr_addr  : in std_logic_vector(log2ceil(g_depth) - 1 downto 0);
         wr_data  : in std_logic_vector(g_width - 1 downto 0);
         wr_ena   : in std_logic;
-        wr_be    : in std_logic_vector((g_width / 8) - 1 downto 0) := (others => '1');
+        wr_be    : in std_logic_vector(((g_width + 7) / 8) - 1 downto 0) := (others => '1');
 
         -- Port B: read
         rd_addr  : in std_logic_vector(log2ceil(g_depth) - 1 downto 0);
@@ -33,7 +33,7 @@ entity ram_sdp is
 end entity ram_sdp;
 
 architecture behavior of ram_sdp is
-    constant c_width_bytes : natural := g_width / 8;
+    constant c_width_bytes : natural := (g_width + 7) / 8;
 
     type ram_type is array (g_depth - 1 downto 0) of std_logic_vector(g_width - 1 downto 0);
 
@@ -69,7 +69,6 @@ architecture behavior of ram_sdp is
     signal rd_data_reg         : std_logic_vector(g_width - 1 downto 0) := (others => '0');
 
 begin
-
     assert g_performance = "LOW_LATENCY" or g_performance = "HIGH_PERFORMANCE"
     report "g_performance must be ""LOW_LATENCY"" or ""HIGH_PERFORMANCE"""
         severity failure;
@@ -84,15 +83,16 @@ begin
         end if;
     end process p_read;
 
-    -- Byte-wise write port
     p_write : process (clk)
+        variable v_hi : natural;
     begin
         if rising_edge(clk) then
             if wr_ena = '1' then
                 for i in 0 to c_width_bytes - 1 loop
                     if wr_be(i) = '1' then
-                        ram(to_integer(unsigned(wr_addr)))((i + 1) * c_width_bytes - 1 downto i * c_width_bytes)
-                        <= wr_data((i + 1) * c_width_bytes - 1 downto i * c_width_bytes);
+                        v_hi := minimum((i + 1) * 8, g_width) - 1; -- clamp the last lane
+                        ram(to_integer(unsigned(wr_addr)))(v_hi downto i * 8)
+                        <= wr_data(v_hi downto i * 8);
                     end if;
                 end loop;
             end if;

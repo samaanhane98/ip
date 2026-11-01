@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Self
 
 import cocotb
-from cocotb.triggers import RisingEdge, ClockCycles
+from cocotb.triggers import RisingEdge, ClockCycles, with_timeout, SimTimeoutError
 from cocotb.types import LogicArray, Logic, Range
 from cocotb.handle import HierarchyObject, LogicArrayObject
 
@@ -146,10 +146,16 @@ class AxisSourceBfm(Driver):
     async def send_transfer(self, transfer: AxisTransfer):
         await self._queue.put(transfer)
 
-    async def send(self, data: bytearray):
+    # TODO: add to driver?
+    async def send(self, data: bytearray, blocking=False):
         transfers = AxisTransfer(width=self._bus_width).from_bytes(data)
-        for transfer in transfers:
-            await self.transfer(transfer)
+        
+        if blocking:
+            for transfer in transfers:
+                await self.transfer(transfer)
+        else:
+            for transfer in transfers:
+                await self.send_transfer(transfer)
 
 class AxisSinkBfm(Monitor):
     def __init__(self, dut: object, name: str, clock: object):
@@ -223,8 +229,7 @@ class AxisSinkBfm(Monitor):
         transfer = await self._queue.get()
         return transfer
         
-
-    async def receive(self) -> bytearray:
+    async def _receive(self) -> bytearray:
         transfers = []
 
         while True:
@@ -236,5 +241,17 @@ class AxisSinkBfm(Monitor):
 
         data = self._record_type.to_bytes(transfers)
         return data
+
+    
+    # TODO: add to monitor?
+    async def receive(self, timeout=None) -> bytearray:
+        if timeout is None:
+            return await self._receive()
+
+        try:
+            await with_timeout(self._receive(), timeout, "ns")
+        except SimTimeoutError:
+            return None
+
 
         
