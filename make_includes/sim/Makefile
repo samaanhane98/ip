@@ -44,6 +44,8 @@ WAVES=0
 COMPILE_ARGS += -2008 +acc
 TOPLEVEL_LANG ?= vhdl
 
+SIM_ARGS += -do {log -r /*}
+
 SIM_BUILD = work/work_$(T)
 
 COCOTB_TOPLEVEL     = $(DUT)

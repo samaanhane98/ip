@@ -11,10 +11,12 @@ from driver import Driver
 from monitor import Monitor
 from transfer import TransferRecord
 
+
 @dataclass
 class BusTransfer(TransferRecord):
-    data  : LogicArray = 0
-    valid : LogicArray = 0
+    data: LogicArray = 0
+    valid: LogicArray = 0
+    last: bool = True
 
     width: int = 0
 
@@ -24,9 +26,10 @@ class BusTransfer(TransferRecord):
 
         transfers = [
             BusTransfer(
-                valid=1, 
-                data=LogicArray.from_bytes(chunk, byteorder='little'), 
-            ) for chunk in chunks]
+                valid=1,
+                data=LogicArray.from_bytes(chunk, byteorder='little'),
+                last=(index == len(chunks) - 1),
+            ) for index, chunk in enumerate(chunks)]
 
         return transfers
 
@@ -36,17 +39,17 @@ class BusTransfer(TransferRecord):
         for transfer in transfers:
             data = transfer.data
 
-            bytes_list = [data[i : i - 7] for i in range(data.range.left, data.range.right, -8)]
+            bytes_list = [data[i: i - 7] for i in range(data.range.left, data.range.right, -8)]
             bytes_list = list(reversed(bytes_list))
 
             for byte in bytes_list:
                 result += bytes([byte])
 
         return result
-    
-    # Does not have last
+
     def is_last(self) -> bool:
-        return True
+        return self.last
+
 
 class BusSourceBfm(Driver):
     def __init__(self, dut: object, name: str, clock: object):
@@ -58,7 +61,7 @@ class BusSourceBfm(Driver):
         self._map_signals()
         self._bus_width = len(self._signals['data'])
         self._record_type = BusTransfer(width=self._bus_width)
-        
+
         self.start()
 
     def _map_signals(self):
@@ -70,14 +73,10 @@ class BusSourceBfm(Driver):
         if self.dut._get(valid_name) == None:
             raise ValueError(f"valid not found for {self.name}")
 
-        ready_name = self.name + "_ready"
-        
-        if self.dut._get(ready_name) == None:
-            raise ValueError(f"ready not found for {self.name}")
-
         self._signals['data'] = self.dut._get(data_name)
         self._signals['valid'] = self.dut._get(valid_name)
-        self._signals['ready'] = self.dut._get(ready_name)
+        self._signals['ready'] = self.dut._get(self.name + "_ready")
+        self._signals['last'] = self.dut._get(self.name + "_last")
 
     def throttle(self, low, high):
         if (low < 0 or high == 0):
@@ -94,7 +93,6 @@ class BusSourceBfm(Driver):
         self.valid_pointer = (self.valid_pointer + 1) % len(self.valid_list)
         return bool(valid)
 
-
     async def transfer(self, transfer: BusTransfer):
         while True:
             if not self.is_valid():
@@ -107,13 +105,19 @@ class BusSourceBfm(Driver):
                 value = transfer.data.to_bytes(byteorder='little') + bytes(num_signal_bytes - num_transfer_bytes)
                 self._signals['data'].value = LogicArray.from_bytes(value, byteorder='little')
 
+                if self._signals['last'] is not None:
+                    self._signals['last'].value = int(transfer.last)
+
                 self._signals['valid'].value = 1
 
                 await RisingEdge(self.clock)
-                while self._signals['ready'].value != 1:
-                    await RisingEdge(self.clock)
+                if self._signals['ready'] is not None:
+                    while self._signals['ready'].value != 1:
+                        await RisingEdge(self.clock)
 
                 self._signals['valid'].value = 0
+                if self._signals['last'] is not None:
+                    self._signals['last'].value = 0
                 return
 
     async def send_transfer(self, transfer: BusTransfer):
@@ -123,6 +127,7 @@ class BusSourceBfm(Driver):
         transfers = BusTransfer(width=self._bus_width).from_bytes(data)
         for transfer in transfers:
             await self.transfer(transfer)
+
 
 class BusSinkBfm(Monitor):
     def __init__(self, dut: object, name: str, clock: object):
@@ -146,14 +151,10 @@ class BusSinkBfm(Monitor):
         if self.dut._get(valid_name) == None:
             raise ValueError(f"valid not found for {self.name}")
 
-        ready_name = self.name + "_ready"
-        
-        if self.dut._get(ready_name) == None:
-            raise ValueError(f"ready not found for {self.name}")
-
         self._signals['data'] = self.dut._get(data_name)
         self._signals['valid'] = self.dut._get(valid_name)
-        self._signals['ready'] = self.dut._get(ready_name)
+        self._signals['ready'] = self.dut._get(self.name + "_ready")
+        self._signals['last'] = self.dut._get(self.name + "_last")
 
     def throttle(self, low=0, high=1):
         if (low < 0 or high == 0):
@@ -162,7 +163,7 @@ class BusSinkBfm(Monitor):
         self.ready_list = [1] * high + [0] * low
         self.ready_pointer = 0
 
-    def is_ready(self) -> bool: 
+    def is_ready(self) -> bool:
         if self.ready_pointer > len(self.ready_list) - 1:
             raise ValueError("Invalid ready pointer value")
 
@@ -175,7 +176,8 @@ class BusSinkBfm(Monitor):
             if not self.is_ready():
                 await ClockCycles(self.clock, 1)
             else:
-                self._signals['ready'].value = 1
+                if self._signals['ready'] is not None:
+                    self._signals['ready'].value = 1
 
                 await RisingEdge(self.clock)
                 while self._signals['valid'].value != 1:
@@ -185,14 +187,19 @@ class BusSinkBfm(Monitor):
                 transfer.valid = self._signals['valid'].value
                 transfer.data = self._signals['data'].value
 
-                self._signals['ready'].value = 0
+                if self._signals['last'] is not None:
+                    transfer.last = bool(self._signals['last'].value == 1)
+                else:
+                    transfer.last = True
+
+                if self._signals['ready'] is not None:
+                    self._signals['ready'].value = 0
 
                 return transfer
 
     async def receive_transfer(self) -> BusTransfer:
         transfer = await self._queue.get()
         return transfer
-        
 
     async def receive(self) -> bytearray:
         transfers = []
@@ -206,4 +213,3 @@ class BusSinkBfm(Monitor):
 
         data = self._record_type.to_bytes(transfers)
         return data
-

@@ -60,7 +60,7 @@ package body math_pkg is
     function and_reduce(arg : in std_logic_vector) return std_logic is
         variable v_result       : std_logic;
     begin
-        v_result := '0';
+        v_result := '1';
         for index in arg'range loop
             v_result := v_result and arg(index);
         end loop;

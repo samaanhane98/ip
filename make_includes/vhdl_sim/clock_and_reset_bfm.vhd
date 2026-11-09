@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.vec_pkg.all;
+use work.array_pkg.all;
 
 entity clock_and_reset_bfm is
     generic (
